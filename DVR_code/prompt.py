@@ -56,38 +56,39 @@ Add the matching event type(s) to the event_type list using the exact event name
 
 5. start_time
    * Extract the start of the requested time range if present.
-   * If only 5th June then assume start time to be 5th June only
-   * It would either be only a date or a date + time (for example -- 15th march 2025 or 20th April 2026 12:06 PM)
-   * Could also be mentioned with reference to present time (for example -- last 7 days, last 2 months), then start time will be 2 months back with respect to today
-   * If the query says only 16th June consider it automatically to be the 16th June of present year.
-   * If it says only 16th June 9AM and no specific time duration consider start time to be 9-1 = 8AM
-   * Convert to ISO 8601 format.
-   * Return None if not present.
+   * Resolve relative references against the current date/time given below
+     (e.g. "last 7 days" → start_time = now - 7 days; "last 2 months" → now - 2 months).
+   * If only a date is given with no time (e.g. "5th June"), set start_time to that date at 00:00:00.
+   * If only a date and year is missing (e.g. "16th June"), assume the current year.
+   * If a date AND a specific clock time are both given (e.g. "16th June 9AM") with no explicit
+     duration/window mentioned, set start_time to 1 hour before that time (i.e. 8AM).
+   * Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS).
+   * Return null if no time information is present in the query.
 
 6. end_time
    * Extract the end of the requested time range if present.
-   * If only 5th June then assume end time to be 6th June
-   * It would either be only a date or a date + time (for example -- 15th march 2025 or 20th April 2026 12:06 PM)
-   * Could also be mentioned with reference to present time (for example -- last 7 days, last 2 months), then end time will be today   
-   * If the query says only 16th June consider it automatically to be the 16th June of present year.
-   * If it says only 16th June 9AM and no specific time duration consider start time to be 9+1 = 10AM
-   * Convert to ISO 8601 format.
-   * Return None if not present.
+   * Resolve relative references against the current date/time given below
+     (e.g. "last 7 days" → end_time = now).
+   * If only a date is given with no time (e.g. "5th June"), set end_time to 23:59:59 of that same date.
+   * If only a date and year is missing (e.g. "16th June"), assume the current year.
+   * If a date AND a specific clock time are both given (e.g. "16th June 9AM") with no explicit
+     duration/window mentioned, set end_time to 1 hour after that time (i.e. 10AM).
+   * Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS).
+   * Return null if no time information is present in the query.
 
-   
-Time Extraction Rules
+7. "Latest" / "recent" trips (no explicit date or time in the query)
+   * If the query uses words like "latest", "recent", "recently", "current", or "last trip"
+     and contains NO other date, time, or duration reference:
+       end_time   = current date/time (given below)
+       start_time = end_time minus 2 days
+   * This 2-day default applies ONLY when there is no other temporal language in the query.
+     If any explicit date, date range, or relative duration is present, use rules 5 and 6
+     instead and ignore this rule.
 
-* Extract only dates and times explicitly mentioned in the query.
-* Convert all extracted values to ISO 8601 format.
-* If a specific date is mentioned without a time:
-
-  * start_time = YYYY-MM-DDT00:00:00
-  * end_time = YYYY-MM-DDT23:59:59
-* If a date range is mentioned, extract both start_time and end_time.
-* If a time range is mentioned along with a date, combine them into complete ISO 8601 timestamps.
-* If relative dates are mentioned (today, yesterday, last week, last month, etc.), resolve them using the current date.
-* If no time information is present, return None for both start_time and end_time.
-
+General notes:
+   * Current date/time for resolving all relative references: {current_datetime}
+   * Always output start_time and end_time in ISO 8601 format, or null if genuinely absent
+     per the rules above.
 Time Window Adjustment Rules
 
 * When a specific time or time range is mentioned, expand the requested time window:
