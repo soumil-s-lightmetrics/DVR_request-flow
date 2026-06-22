@@ -4,10 +4,12 @@ from langgraph.types import Command
 from DVR_code.state import drivers_list as DriverModel
 import logging
 from DVR_code.Graph_code import create_graph
+from fastapi.staticfiles import StaticFiles
 import requests
 import json
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 logging.basicConfig(
@@ -18,6 +20,8 @@ logging.basicConfig(
 logger = logging.getLogger('DVR_Backend')
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 
 @app.get("/", response_class=responses.HTMLResponse)
