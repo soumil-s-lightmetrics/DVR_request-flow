@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger('DVR_Backend')
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="image")
 
 
 
