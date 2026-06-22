@@ -1,0 +1,7 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+.env
+main2.py
+trial.ipynb
+myenv
+Graph_code2.py
+__pycache__
