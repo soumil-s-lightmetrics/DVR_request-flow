@@ -76,14 +76,48 @@ Add the matching event type(s) to the event_type list using the exact event name
    * Convert to ISO 8601 format (YYYY-MM-DDTHH:MM:SS).
    * Return null if no time information is present in the query.
 
-7. "Latest" / "recent" trips (no explicit date or time in the query)
+7. TIME-OF-DAY REASONING (use when the query names or implies a part of the day in natural
+   language, rather than an explicit clock time, duration, or date range — e.g. "morning
+   trips", "after sunrise", "during rush hour", "late at night", "post-midnight", "lunch
+   hour", "before dawn", or any other commonly understood time-of-day expression):
+
+   * Do NOT rely on a fixed list of phrases. Use your general understanding of what time of
+     day a phrase conventionally refers to, the same way a person would interpret it in
+     everyday conversation, and derive a reasonable clock-time window from it.
+   * Think in terms of these broad anchor points as a reference scale (24-hour clock), and
+     place the phrase's meaning relative to them:
+       midnight ≈ 00:00   early morning ≈ 03:00-06:00   sunrise/dawn ≈ 06:00
+       morning ≈ 06:00-12:00   noon ≈ 12:00   afternoon ≈ 12:00-17:00
+       evening ≈ 17:00-20:00   sunset/dusk ≈ 18:00-19:00   night ≈ 20:00-24:00
+     These are anchors to reason from, not an exhaustive list — interpret any other phrase
+     (rush hour, lunch hour, late night, post-midnight, before dawn, etc.) by judging where
+     it conventionally falls on this same scale.
+   * Construct a window of roughly 1-4 hours around your best interpretation of the phrase,
+     wide enough to be a sensible "window of the day" rather than a single instant, unless
+     the query's wording clearly implies a single moment (e.g. "right after sunrise").
+   * "before <phrase>"  → start_time = 00:00:00 (or start of the resolved date), end_time =
+     the start of your inferred window for that phrase.
+   * "after <phrase>"   → start_time = the end of your inferred window for that phrase,
+     end_time = 23:59:59 (or end of the resolved date), unless another bound is given
+     elsewhere in the query.
+   * "during <phrase>" / no preposition → start_time and end_time are the start and end of
+     your inferred window.
+   * Apply this window to whatever date is otherwise resolved (an explicit date, a relative
+     date like "yesterday", or today if no date is mentioned at all).
+   * If the query combines a time-of-day phrase with an explicit clock time (e.g. "morning,
+     around 9AM"), prefer the explicit clock time and apply the ±1 hour rule from 5/6 instead.
+   * If a phrase is genuinely ambiguous or you cannot reasonably infer any time-of-day meaning
+     from it, do not guess — treat it as if no time-of-day information was given.
+
+8. "Latest" / "recent" trips (no explicit date, time, or time-of-day meaning in the query)
    * If the query uses words like "latest", "recent", "recently", "current", or "last trip"
-     and contains NO other date, time, or duration reference:
+     and contains NO other date, time, duration, or time-of-day expression (as covered by
+     rule 7):
        end_time   = current date/time (given below)
        start_time = end_time minus 2 days
-   * This 2-day default applies ONLY when there is no other temporal language in the query.
-     If any explicit date, date range, or relative duration is present, use rules 5 and 6
-     instead and ignore this rule.
+   * This 2-day default applies ONLY when no other temporal meaning is present. If any
+     explicit date, date range, relative duration, or time-of-day expression is present
+     (literal or inferred per rule 7), use rules 5, 6, or 7 instead and ignore this rule.
 
 General notes:
    * Current date/time for resolving all relative references: {current_datetime}
