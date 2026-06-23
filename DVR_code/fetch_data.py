@@ -55,7 +55,7 @@ def fetch_all_trips(url: str, headers: dict, base_params: dict, limit: int, skip
         # 4. Increment skip to move to the next page
         skip += limit
 
-        if skip>4*limit:
+        if skip>8*limit:
             break
     if len(all_trips)>0:
         status_code = 200
