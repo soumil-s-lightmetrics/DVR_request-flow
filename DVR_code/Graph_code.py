@@ -231,6 +231,9 @@ def show_results(state: AgentState):
     trips = state.trip_results or []
     first_time = not state.results_shown
     logger.info(f'show_results — first_time={first_time}')
+    
+    if len(trips)==0:
+        return {'chat_reponse' : "No similar trips found, want to sea"}
 
     interrupt_payload = {
         'message': 'show_results',
@@ -241,31 +244,37 @@ def show_results(state: AgentState):
 
     if first_time:
         interrupt_payload['filters'] = {
+
             'driver': {
                 'driverId': state.chosen_driver[0]['driverId'],
                 'driverName': state.chosen_driver[0]['driverName']
                 } if state.chosen_driver else None,
+
             'asset': state.chosen_asset_id,
+
             'events': state.chosen_event,
+
             'date_range': {
                 'start': state.chosen_timestamp.start_time,
                 'end': state.chosen_timestamp.end_time
-                } if state.chosen_timestamp else None
-}
-     
-
+                } if state.chosen_timestamp else None}
+        
     msg = interrupt(interrupt_payload)
 
     if isinstance(msg, dict):
         text = msg.get('text')
         trip_hint = msg.get('tripId')
         active_filters = msg.get('activeFilters')
+
     else:
         text = msg
         trip_hint = None
         active_filters = None
 
+## dvr_raw_text is for llm to read the query whether a dvr request has been made by the user or not
     updates = {'dvr_raw_text': text, 'needs_refetch': False}
+    
+## trip_hint is the trip_id
     if trip_hint:
         updates['selected_trip_hint'] = trip_hint
 
@@ -284,12 +293,7 @@ def show_results(state: AgentState):
         updates['results_shown'] = True
     return updates
 
-class DvrIntent(BaseModel):
-    intent: Literal['general_question', 'narrow_trips', 'dvr_request']
-    dvr_type: Literal['clip', 'timelapse'] | None = None
-    trip_id: str | None = None
-    start_time: str | None = None
-    end_time: str | None = None
+
 
 def describe_active_filters(state: AgentState) -> str:
     parts = []
@@ -304,9 +308,21 @@ def describe_active_filters(state: AgentState) -> str:
         parts.append(f"date range: {state.chosen_timestamp.start_time} to {state.chosen_timestamp.end_time}")
     return "; ".join(parts) if parts else "none"
 
+class Merge_ExtractedFilters(BaseModel):
+    driver_name: str | None = None
+    event_type: list[str] | None = None
+    trip_id: str | None = None
+    asset_id: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+    filter_removed : dict | None = None
+
+
 def merge_filters_from_text(state: AgentState):
+    
     try:
         active_filters_desc = describe_active_filters(state)
+
         contextual_prompt = f"""
 Filters already active on the current trip list: {active_filters_desc}
 
@@ -323,7 +339,8 @@ changing them.
         structured_llm = llm.with_structured_output(ExtractedFilters)
         extracted = structured_llm.invoke([
             HumanMessage(content=state.dvr_raw_text or ''),
-            SystemMessage(content=contextual_prompt)
+            SystemMessage(content=contextual_prompt),
+            SystemMessage(content=simple_query)
         ])
         logger.info(f'narrow-down extraction: {extracted}')
 
@@ -379,16 +396,24 @@ changing them.
         logger.error('failed in merge_filters_from_text', exc_info=True)
         return {'chat_response': 'Could not understand the filter request.'}
 
+class DvrIntent(BaseModel):
+    intent: Literal['general_question', 'narrow_trips', 'dvr_request']
+    dvr_type: Literal['clip', 'timelapse'] | None = None
+    trip_id: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+
 def extract_dvr_intent(state: AgentState):
     logger.info('extracting DVR intent from message')
     text = state.dvr_raw_text or ''
     trips = state.trip_results or []
 
-
     try:
+        logger.info(json.dumps(trips[0]))
         trip_summary = json.dumps([
             {'tripId': t['tripId'], 'startTimeUTC': t['startTimeUTC'], 'endTimeUTC': t['endTimeUTC'],
-             'driverId': t['driverId'], 'assetId': t['assetId']} for t in trips
+             'driverId': t['driverId'], 'assetId': t['assetId'],'events': t.get('eventCount', {})
+} for t in trips
         ])
         active_filters_desc = describe_active_filters(state)
 
@@ -608,6 +633,7 @@ def submit_dvr_request(state: AgentState):
     except Exception as e:
         logger.error('failed in submit_dvr_request', exc_info=True)
         return {'chat_response': 'Something went wrong submitting the DVR request.'}
+    
     
 
 def create_graph():
