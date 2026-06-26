@@ -22,8 +22,6 @@ logger = logging.getLogger('DVR_Backend')
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="image")
 
-
-
 @app.get("/", response_class=responses.HTMLResponse)
 async def get_ui():
     with open("index.html", "r") as f:

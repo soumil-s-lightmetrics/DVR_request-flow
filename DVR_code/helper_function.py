@@ -1,8 +1,32 @@
 import os 
 import requests
+import logging
 from datetime import datetime
-
+from DVR_code.state import AgentState
 from datetime import timezone  # add this import alongside datetime, timedelta
+import logging
+import os
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger('Helper Functions')
+
+def describe_active_filters(state: AgentState) -> str:
+    parts = []
+    if state.chosen_driver:
+        names = ", ".join(d['driverName'] for d in state.chosen_driver)
+        parts.append(f"driver: {names}")
+    if state.chosen_asset_id:
+        parts.append(f"asset: {state.chosen_asset_id}")
+    if state.chosen_event:
+        parts.append(f"event types: {', '.join(state.chosen_event)}")
+    if state.chosen_timestamp:
+        parts.append(f"date range: {state.chosen_timestamp.start_time} to {state.chosen_timestamp.end_time}")
+    return "; ".join(parts) if parts else "none"
+
 
 def to_aware_utc(val):
     dt = datetime.fromisoformat(val.replace('Z', '+00:00'))
@@ -18,7 +42,7 @@ def filter_enriched_trips(trips, driver_ids=None, asset_id=None, event_list=None
     for t in trips:
         if driver_ids and t.get('driverId') not in driver_ids:
             continue
-        if asset_id and t.get('assetId') != asset_id:
+        if asset_id and t.get('assetId') not in asset_id:
             continue
         if event_list:
             trip_events = set(ev['type'].lower() for ev in t.get('events', []))
@@ -33,14 +57,21 @@ def filter_enriched_trips(trips, driver_ids=None, asset_id=None, event_list=None
         result.append(t)
     return result
 
-def resolve_driver_matches(fleet_id, driver_name):
-    if not driver_name:
+def resolve_driver_matches(fleet_id, driver_names : list):
+    if not driver_names:
         return []
     url = os.getenv('LM_API_URL')
     auth_token = os.getenv('LM_ACCESS_TOKEN')
     id_token = os.getenv('LM_ID_TOKEN')
     headers = {'Authorization': f"Bearer {auth_token}", 'id-token': id_token, 'x-lm-desired-account': 'lmpresales'}
-    request = requests.get(url=f"{url}/fleets/{fleet_id}/drivers/list?search={str(driver_name).lower()}", headers=headers)
-    data = request.json()
-    return [{'driverName': d['driverName'], 'driverId': d['driverId']} for d in data.get('rows', [])]
+    
+    driver_matches = []
+    for drivers in driver_names:
+        Params={ 'search' : drivers, 'limit' : 50}
+        logger.info(Params)
+        request = requests.get(url=f"{url}/fleets/{fleet_id}/drivers/list", params=Params, headers=headers)
+        logger.info(request.json())
+        data = request.json()
+        driver_matches.extend([{'driverId': d['driverId'], 'driverName': d['driverName']} for d in data.get('rows', [])])
 
+    return driver_matches

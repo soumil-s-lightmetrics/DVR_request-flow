@@ -33,7 +33,7 @@ class AgentState(BaseModel):
     autocomplete_search : str | None = None
 
     chosen_driver : list[dict] | None = None
-    chosen_asset_id : str | None = None
+    chosen_asset_id : list[str] | None = None
     chosen_trip_id : str | None = None
     chosen_event : list[str] | None = None
 
@@ -65,3 +65,8 @@ class AgentState(BaseModel):
     start_time: str | None = None
     end_time: str | None = None
     needs_refetch: bool | None = False
+
+    first_query : bool | None = False
+    all_trips : list | None = []
+    filter_trips : list | None = []
+    limit_to_latest : int | None = None

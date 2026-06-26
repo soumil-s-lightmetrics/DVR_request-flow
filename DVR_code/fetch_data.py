@@ -1,6 +1,10 @@
 import requests
 import logging
 from pydantic import BaseModel
+import os
+from dotenv import load_dotenv
+load_dotenv()
+import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -8,24 +12,35 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger('DVR_Graph')
-
 class response_result(BaseModel):
     text : list | None = None
     status_code : int | None = None
 
-def fetch_all_trips(url: str, headers: dict, base_params: dict, limit: int, skip: int):
+url = os.getenv('LM_API_URL')
+auth_token = os.getenv('LM_ACCESS_TOKEN')
+id_token = os.getenv('LM_ID_TOKEN')
+
+headers = {
+            'Authorization': f"Bearer {auth_token}",
+            'id-token': id_token,
+            'x-lm-desired-account': 'lmpresales'
+        }
+
+def fetch_all_trips(url: str, base_params: dict, skip: int, control_number : int):
     all_trips = []
-    
-    while True:
+    limit = 40
+    while skip< control_number:
         params1 = {
             **base_params,
-            'limit': limit,
+            'key' : "startTimeUTC",
+            'sort' : 'desc',
+            'limit' : limit,
             'skip': skip
         }
 
-        logger.info(f"Fetching trips with skip={skip}, limit={limit}")
+        logger.info(f"Fetching trips with {params1}")
         response = requests.get(url=url, params=params1, headers=headers)
-        
+        print(response.status_code)
         if response.status_code != 200:
             logger.error(f"API Error {response.status_code}: {response.text}")
             break
@@ -38,8 +53,6 @@ def fetch_all_trips(url: str, headers: dict, base_params: dict, limit: int, skip
 
         rows = data.get('rows', [])
         
-        # --- CRITICAL FIX: Explicit termination checks ---
-        # 1. Break immediately if rows is empty, None, or not a list
         if not rows:
             logger.info("No more rows returned from API. Ending pagination loop.")
             break
@@ -55,8 +68,6 @@ def fetch_all_trips(url: str, headers: dict, base_params: dict, limit: int, skip
         # 4. Increment skip to move to the next page
         skip += limit
 
-        if skip>8*limit:
-            break
     if len(all_trips)>0:
         status_code = 200
     else : 
@@ -67,6 +78,7 @@ def fetch_all_trips(url: str, headers: dict, base_params: dict, limit: int, skip
         text=all_trips,
         status_code=status_code
     )
+
 
 def fetch_all_drivers(url: str, base_params : dict, headers: dict, limit: int = 50, skip: int = 0):
     
