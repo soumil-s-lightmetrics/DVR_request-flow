@@ -29,3 +29,5 @@ httpx==0.28.1
 websockets==15.0.1
 tenacity==9.1.4
 PyJWT==2.13.0
+
+cachetools==5.3.3
