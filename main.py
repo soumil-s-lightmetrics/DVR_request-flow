@@ -129,7 +129,7 @@ async def chat_socket(websocket: WebSocket):
                 if option == "Drivers":
                     state["chosen_driver"] = [{"driverId": item["driverId"], "driverName": item["driverName"]}]
                 elif option == "Assets":
-                    state["chosen_asset_id"] = item["assetId"]
+                    state["chosen_asset_id"] = [item["assetId"]]
                 elif option == "Trips":
                     state["chosen_trip_id"] = item["tripId"]
                 elif option == "Event Types":

@@ -189,3 +189,21 @@ For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/St
 2026-07-01 14:19:46,361 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
 2026-07-01 14:19:46,362 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 14:18:46.362035
 2026-07-01 14:20:18,925 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 14:21:31,379 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 14:21:31,829 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 14:21:33,010 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 14:21:33,012 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 14:20:33.012164
+2026-07-01 14:21:34,367 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 14:21:34,821 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 14:21:36,011 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 14:21:36,011 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 14:20:36.011698
+2026-07-01 14:41:39,104 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 14:41:52,005 | langgraph.checkpoint.serde.jsonplus | WARNING | RequestID: N/A | Deserializing unregistered type DVR_code.state.drivers_list from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('DVR_code.state', 'drivers_list')]
+2026-07-01 15:41:07,281 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 15:41:07,631 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 15:41:08,862 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 15:41:08,863 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 15:40:08.863476
+2026-07-01 15:41:15,402 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 15:41:16,053 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 15:41:17,198 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 15:41:17,200 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 15:40:17.200673
