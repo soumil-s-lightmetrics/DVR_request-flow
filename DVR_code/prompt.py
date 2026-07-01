@@ -54,6 +54,40 @@ High-G-Event
 When analyzing a user query, identify any mention, synonym, paraphrase, or natural-language description that corresponds to one or more of the supported event types above.
 Add the matching event type(s) to the event_type list using the exact event names shown above. No other event except for these shall be considered an event.
 
+4a. events
+   * Captures whether the user wants trips RANKED or FILTERED by how many safety events
+     they contain — this is DIFFERENT from event_type (which captures WHICH category of
+     event, like "harsh braking"). `events` is about VOLUME/COUNT of events on a trip,
+     regardless of category.
+
+   * Set events = "max" when the user wants the trip(s) with the MOST events/violations.
+     Trigger phrases: "trip with the most events", "most violations", "highest number of
+     incidents", "which trip had the most", "worst trip", "riskiest trip".
+
+   * Set events = "min" when the user wants the trip(s) with the FEWEST events/violations.
+     Trigger phrases: "fewest events", "least violations", "safest trip", "lowest number
+     of incidents", "which trip had the least".
+
+   * Set events = <integer N> when the user gives an explicit numeric threshold for event
+     count, meaning "at least N events" (not "exactly N", unless the user explicitly says
+     "exactly"). Trigger phrases: "trips with 3 or more violations", "at least 5 events",
+     "more than 2 incidents" (→ events = 3, since "more than 2" means at least 3).
+
+   * Return None if the query says nothing about event count/ranking — including when it
+     only mentions a specific event TYPE without any count/ranking language (that case is
+     event_type's job, not this field's).
+
+   * event_type and events are independent and can both be set together. Example: "which
+     trip had the most harsh braking events" → event_type=["Harsh-Braking"], events="max"
+     (the user wants the trip with the highest COUNT of harsh-braking events specifically,
+     not the highest count of all events combined).
+
+   * Do NOT set events just because the query mentions an event type. Only set it when the
+     query is explicitly about COUNT, RANKING, or VOLUME of events — "show me harsh braking
+     events" has event_type=["Harsh-Braking"] and events=None, NOT events="max"/"min"/any
+     number, since there's no ranking/count language at all.
+
+
 5. start_time
    * Extract the start of the requested time range if present.
    * Resolve relative references against the current date/time given below
@@ -494,15 +528,51 @@ Output:
 "end_time": "2026-06-24T08:00:00",
 "option": "Trips"
 }
+Query:
+Which trip had the most violations
+
+Output:
+{
+"driver_name": [],
+"trip_id": None,
+"asset_id": [],
+"event_type": [],
+"start_time": None,
+"end_time": None,
+"events": "max",
+"option": "Trips"
+}
+
+Query:
+Show me the trip with the fewest harsh braking events
+
+Output:
+{
+"driver_name": [],
+"trip_id": None,
+"asset_id": [],
+"event_type": ["Harsh-Braking"],
+"start_time": None,
+"end_time": None,
+"events": "min",
+"option": "Event Types"
+}
+
+Query:
+Trips with at least 3 violations for Sunil Verma
+
+Output:
+{
+"driver_name": ["Sunil Verma"],
+"trip_id": None,
+"asset_id": [],
+"event_type": [],
+"start_time": None,
+"end_time": None,
+"events": 3,
+"option": "Drivers"
+}
 """
-
-
-
-
-
-
-
-
 
 
 merge_query="""
@@ -560,6 +630,39 @@ High-G-Event
 
 When analyzing a user query, identify any mention, synonym, paraphrase, or natural-language description that corresponds to one or more of the supported event types above.
 Add the matching event type(s) to the event_type list using the exact event names shown above. No other event except for these shall be considered an event.
+
+4a. events
+   * Captures whether the user wants trips RANKED or FILTERED by how many safety events
+     they contain — this is DIFFERENT from event_type (which captures WHICH category of
+     event, like "harsh braking"). `events` is about VOLUME/COUNT of events on a trip,
+     regardless of category.
+
+   * Set events = "max" when the user wants the trip(s) with the MOST events/violations.
+     Trigger phrases: "trip with the most events", "most violations", "highest number of
+     incidents", "which trip had the most", "worst trip", "riskiest trip".
+
+   * Set events = "min" when the user wants the trip(s) with the FEWEST events/violations.
+     Trigger phrases: "fewest events", "least violations", "safest trip", "lowest number
+     of incidents", "which trip had the least".
+
+   * Set events = <integer N> when the user gives an explicit numeric threshold for event
+     count, meaning "at least N events" (not "exactly N", unless the user explicitly says
+     "exactly"). Trigger phrases: "trips with 3 or more violations", "at least 5 events",
+     "more than 2 incidents" (→ events = 3, since "more than 2" means at least 3).
+
+   * Return None if the query says nothing about event count/ranking — including when it
+     only mentions a specific event TYPE without any count/ranking language (that case is
+     event_type's job, not this field's).
+
+   * event_type and events are independent and can both be set together. Example: "which
+     trip had the most harsh braking events" → event_type=["Harsh-Braking"], events="max"
+     (the user wants the trip with the highest COUNT of harsh-braking events specifically,
+     not the highest count of all events combined).
+
+   * Do NOT set events just because the query mentions an event type. Only set it when the
+     query is explicitly about COUNT, RANKING, or VOLUME of events — "show me harsh braking
+     events" has event_type=["Harsh-Braking"] and events=None, NOT events="max"/"min"/any
+     number, since there's no ranking/count language at all.
 
 5. start_time
    * Extract the start of the requested time range if present.
@@ -1146,6 +1249,51 @@ Output:
 "start_time": "2026-06-10T12:00:00",
 "end_time": "2026-06-10T17:00:00"
 }
+
+Query:
+Which trip had the most violations
+
+Output:
+{
+"driver_name": [],
+"trip_id": None,
+"asset_id": [],
+"event_type": [],
+"start_time": None,
+"end_time": None,
+"events": "max",
+"option": "Trips"
+}
+
+Query:
+Show me the trip with the fewest harsh braking events
+
+Output:
+{
+"driver_name": [],
+"trip_id": None,
+"asset_id": [],
+"event_type": ["Harsh-Braking"],
+"start_time": None,
+"end_time": None,
+"events": "min",
+"option": "Event Types"
+}
+
+Query:
+Trips with at least 3 violations for Sunil Verma
+
+Output:
+{
+"driver_name": ["Sunil Verma"],
+"trip_id": None,
+"asset_id": [],
+"event_type": [],
+"start_time": None,
+"end_time": None,
+"events": 3,
+"option": "Drivers"
+}
 """
 
 general_query = """
@@ -1252,4 +1400,138 @@ HOW TO ANSWER
      data internally, never for the spoken answer.     
 
 Now answer the manager's question using trip_information below.
+"""
+
+intent_query = f"""
+
+Classify this message into exactly one of: 'dvr_request', 'show_trips', 'general_question'.
+
+═══════════════════════════════════════════════════════════════════════════
+1. 'dvr_request'
+═══════════════════════════════════════════════════════════════════════════
+The user wants DVR footage, video, or a timelapse for a trip. Resolve trip_id, dvr_type,
+and start_time (end_time only if explicitly given — see time rules below). This is about
+WATCHING something, not finding or listing trips.
+
+Example queries:
+1. "Get me the footage for this trip" — direct request for video on the current trip
+2. "Show me the video from 10:15" — "video" + an exact time to extract
+3. "Can I get a DVR clip of trip 3?" — explicit "DVR clip" + a trip reference
+4. "Pull the camera footage from the crash" — "camera footage" tied to an incident
+5. "I need a timelapse of the whole trip" — explicit "timelapse" keyword
+6. "Send me the clip starting at 14:30" — "clip" + exact time, no new filter implied
+7. "Get footage of the harsh braking event" — wants video of an event already on the trip
+8. "Can you grab the video around 9 AM?" — "video" + approximate/incident time phrasing
+9. "Footage from when the accident happened" — incident-based footage request
+10. "Give me a 2-minute clip of trip 7" — footage + explicit trip ID + duration
+11. "Show the driver camera for this one" — "driver camera" maps to dvr_type=driver
+12. "I want to see what happened on camera at 3pm" — "on camera" = footage, not data
+13. "Can you export the video for the last trip?" — footage request, "last trip" resolves the target
+14. "Get a side-by-side clip from 11:00 to 11:02" — footage + explicit start AND end time
+15. "Pull up the footage right before the swerve" — footage tied to an incident moment
+
+═══════════════════════════════════════════════════════════════════════════
+2. 'show_trips'
+═══════════════════════════════════════════════════════════════════════════
+The user's underlying INTENT is to have a trip or trips IDENTIFIED, RETRIEVED, DISPLAYED,
+or NARROWED — they want the system to act on the trip list, not just describe it.
+
+Do not pattern-match on specific words. The same intent can be phrased as a command, a
+plain statement, or a question — judge what the user actually wants to happen next, not
+which words they used.
+
+Ask yourself: "If I respond correctly, will the trip list (or the user's view of it)
+CHANGE, or will a SPECIFIC TRIP get singled out and acted on?" If yes, this is 'show_trips' —
+regardless of whether the user posed it as a question, gave a command, or just described
+something that happened (like an incident at a certain time).
+
+This covers two situations that share the same underlying intent:
+- The user wants to NARROW what's shown, by supplying a new driver, asset, date, event
+  type, or trip ID not currently part of the active filters.
+- The user wants a TRIP RETRIEVED or SELECTED from what's already shown — even if no new
+  filter is involved — because they want that trip identified and surfaced, not merely
+  discussed.
+
+Illustrative examples (these show the REASONING, not a list to match against):
+1. "Show me the trips" — wants the trip list displayed; the core action is display itself
+2. "Only show driver John's trips" — wants the displayed set changed to a new driver scope
+3. "Narrow this down to asset A102" — wants the set changed to a new asset scope
+4. "An accident happened around 3 AM" — phrased as a statement, but the underlying want is
+   for the system to locate/show trips around that time — a new time scope is implied
+5. "Fetch the latest trip among these" — no new scope at all (same trip set), but the
+   intent is to have ONE SPECIFIC TRIP retrieved and returned, not just discussed
+6. "Get me the most recent trip" — same intent as #5: retrieve and surface a specific trip
+7. "Pick the trip with the most violations" — wants a specific trip selected/surfaced,
+   not just identified in conversation
+8. "How many trips does John have?" — phrased as a question, but answering it requires
+   the system to go find John's trips, which aren't in the current scope — the intent is
+   retrieval, not analysis of data already in view
+9. "Are there any trips from yesterday?" — phrased as a question, but "yesterday" isn't
+   in the active scope, so satisfying the intent means changing what's shown
+10. "Show me trips with speeding events" — wants the set narrowed by event type
+11. "Can you filter to the last 5 trips?" — wants a count-based narrowing applied
+12. "Filter out everyone except Priya" — wants the displayed set changed to one driver
+13. "Just trips without the harsh braking flag" — wants the set narrowed by exclusion
+14. "What trips happened on the 14th?" — phrased as a question, but the date isn't yet
+    part of the active scope, so the intent is to retrieve trips matching it
+15. "Switch to driver Priya's trips" — wants the displayed scope swapped to a new driver
+
+═══════════════════════════════════════════════════════════════════════════
+3. 'general_question'
+═══════════════════════════════════════════════════════════════════════════
+The user's underlying INTENT is to receive an ANSWER, FACT, or SUMMARY about the trips
+already in view — nothing about what's displayed needs to change, and no specific trip
+needs to be retrieved or singled out as a result.
+
+Ask yourself: "If I respond correctly, does the trip list stay exactly as it is, and does
+my response consist of TELLING the user something rather than SURFACING a trip or
+changing the view?" If yes, this is 'general_question'.
+
+This is the test that distinguishes it from 'show_trips' even when the wording looks
+similar: a question about already-visible data that wants a DESCRIPTIVE answer is
+'general_question'; a question or statement that wants a trip RETRIEVED, SELECTED, or the
+VIEW CHANGED is 'show_trips' — even if no new filter criteria are mentioned at all.
+
+Illustrative examples (these show the REASONING, not a list to match against):
+1. "Which trip had the most violations?" — wants a fact reported, not a trip surfaced
+2. "Summarize the incidents" — wants a description of existing data
+3. "How many trips are there?" — wants a count, the view doesn't need to change
+4. "Which of these trips is the latest?" — wants a fact identified verbally; contrast
+   with "fetch the latest trip among these" above, which wants that trip RETURNED
+5. "Any speeding events today?" (when "today" is already the active date filter) — pure
+   fact-check against data already in scope, no retrieval or view change implied
+6. "Tell me about trip 3" — wants a description, not a change to what's displayed
+7. "Which of these trips had harsh braking?" — wants an answer identifying which ones,
+   not those trips re-displayed or singled out for action
+8. "What's the most common event type here?" — pure aggregation/fact question
+9. "Did any of these trips involve speeding?" — yes/no fact question about current data
+10. "What time did the first trip start?" — reads a single fact from existing data
+11. "How long was the longest trip?" — computed fact, no view change needed
+12. "Which driver had the most events?" — aggregation across the current set
+13. "Is there anything unusual in these results?" — open-ended analysis, not retrieval
+14. "What's the total number of harsh braking events?" — a count, not a trip selection
+15. "Did trip 5 have any violations?" — yes/no fact about one already-known trip
+DISAMBIGUATION NOTE (this is the most common source of misclassification):
+The deciding factor is NOT whether the message is phrased as a question or a statement.
+The deciding factor is whether answering it requires a DIFFERENT set of trips than what's
+currently active ('show_trips'), or whether it can be fully answered from the trips already
+shown as-is ('general_question'). Compare the criteria in the message against "Filters
+currently active" above — if something new is being introduced, it's 'show_trips' no matter
+how the sentence is phrased.
+
+Time extraction rules for dvr_request (apply only when intent is dvr_request):
+- EXACT phrasing ("from X", "at X", "starting at X") → return X as start_time, with
+  NO adjustment.
+  Example: "get footage from 10:15" → start_time = "10:15"
+- APPROXIMATE/incident phrasing ("around X", "near X", "an accident occurred at X")
+  → subtract 2 minutes 30 seconds from X, rounded to the nearest minute (downstream
+  parsing only reads HH:MM, so sub-minute precision is dropped anyway).
+  Example: "an accident happened around 10:15" → start_time = "10:13"
+- Only set end_time if the user explicitly gives a second time ("from X to Y",
+  "between X and Y"). Otherwise leave end_time unset — duration is chosen separately
+  via a dropdown, not extracted here.
+  Example: "footage from 10:00 to 10:05" → start_time = "10:00", end_time = "10:05"
+  Example: "footage from 10:00" → start_time = "10:00", end_time = unset
+- Return times as HH:MM (24-hour) unless a specific date is mentioned, in which case
+  return full ISO 8601.
 """

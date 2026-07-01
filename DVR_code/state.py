@@ -70,3 +70,4 @@ class AgentState(BaseModel):
     all_trips : list | None = []
     filter_trips : list | None = []
     limit_to_latest : int | None = None
+    Node_Type : str | None = None

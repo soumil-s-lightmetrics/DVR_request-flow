@@ -9,8 +9,21 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
+from utils.auth import auth_manager
 
 load_dotenv()
+
+from utils.auth_util import AuthManager  # adjust import path to wherever you place this file
+
+# logger = debug_logger()
+
+url = "https://api.lightmetrics.co/v1"
+auth_token, id_token = auth_manager._get_access_token()
+logging.info(f"auth_token : {auth_token}")
+headers = {
+            'Authorization': f"Bearer {auth_token}",
+            'id-token': id_token,
+            'x-lm-desired-account': 'lmpresales'}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,14 +43,6 @@ async def get_ui():
 
 @app.get('/{fleet_id}/load-data')
 async def fetch_driver_data(fleet_id: str):
-    url = os.getenv('LM_API_URL')
-    auth_token = os.getenv('LM_ACCESS_TOKEN')
-    id_token = os.getenv('LM_ID_TOKEN')
-    headers = {
-        'Authorization': f"Bearer {auth_token}",
-        'id-token': id_token,
-        'x-lm-desired-account': 'lmpresales'
-    }
 
     drivers_response = json.loads(
         requests.get(url=f'{url}/fleets/{fleet_id}/drivers/list', headers=headers).text

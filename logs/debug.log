@@ -1,0 +1,65 @@
+2026-07-01 10:26:27,782 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v1/v2/auth/oauth2/token "HTTP/1.1 401 Unauthorized"
+2026-07-01 10:28:04,217 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v1/v2/auth/oauth2/token "HTTP/1.1 401 Unauthorized"
+2026-07-01 10:29:00,231 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:29:02,666 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:32:46,383 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:33:39,827 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:36:01,676 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:40:18,807 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:42:11,338 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:42:12,726 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:43:44,596 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:43:46,103 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:43:47,325 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:44:11,223 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 10:47:02,039 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:47:03,648 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:47:04,813 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:47:34,009 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 10:48:53,976 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:52:24,312 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:52:25,600 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:52:27,007 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:52:28,057 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 10:52:46,057 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:07:50,590 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:07:50,591 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:07:51,969 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:07:51,969 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:06:51.969719
+2026-07-01 11:08:47,558 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:09:53,334 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:09:53,335 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:09:56,519 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:09:56,520 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:08:56.520100
+2026-07-01 11:11:46,121 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:11:46,121 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:11:47,411 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:11:47,411 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:10:47.411916
+2026-07-01 11:12:12,243 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:13:12,086 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:13:12,087 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:13:13,688 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:13:13,689 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:12:13.689798
+2026-07-01 11:13:37,424 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:13:37,425 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:13:38,554 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:13:38,555 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:12:38.555083
+2026-07-01 11:13:59,961 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:25:54,489 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:25:54,490 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:25:55,631 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:25:55,631 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:24:55.631698
+2026-07-01 11:31:29,654 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:31:29,655 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:31:31,021 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:31:31,022 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:30:31.022188
+2026-07-01 11:32:02,212 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:23,051 | langgraph.checkpoint.serde.jsonplus | WARNING | RequestID: N/A | Deserializing unregistered type DVR_code.state.drivers_list from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('DVR_code.state', 'drivers_list')]
+2026-07-01 11:32:23,052 | langgraph.checkpoint.serde.jsonplus | WARNING | RequestID: N/A | Deserializing unregistered type DVR_code.state.timestamp from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('DVR_code.state', 'timestamp')]
+2026-07-01 11:32:25,400 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:27,109 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:37,503 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:39,266 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:50,752 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:32:51,066 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 503 Service Unavailable"
+2026-07-01 11:32:59,048 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

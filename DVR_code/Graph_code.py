@@ -5,7 +5,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from DVR_code.state import AgentState, timestamp, drivers_list
 from langchain_openai import ChatOpenAI
 from langchain.messages import HumanMessage, SystemMessage
-from DVR_code.prompt import simple_query, merge_query, general_query
+from DVR_code.prompt import simple_query, merge_query, general_query, intent_query
 from pydantic import BaseModel
 from typing import Literal
 from datetime import datetime, timedelta
@@ -13,6 +13,7 @@ from DVR_code.fetch_data import fetch_all_trips
 from dotenv import load_dotenv
 from DVR_code.helper_function import filter_enriched_trips, resolve_driver_matches, to_aware_utc, describe_active_filters
 import requests
+from utils.auth import auth_manager
 import json
 import logging
 load_dotenv()
@@ -30,6 +31,15 @@ llm_for_chat = ChatOpenAI(model='gpt-5.4-mini', api_key=os.getenv('OPENAI_API_KE
 llm_for_advance_reasoning = ChatOpenAI(model='gpt-5.4', api_key=os.getenv('OPENAI_API_KEY'))
 
 
+# logger = debug_logger()
+
+url = "https://api.lightmetrics.co/v2"
+auth_token, id_token = auth_manager._get_access_token()
+logging.info(f"auth_token : {auth_token}")
+headers = {
+            'Authorization': f"Bearer {auth_token}",
+            'id-token': id_token,
+            'x-lm-desired-account': 'lmpresales'}
 
 class ExtractedFilters(BaseModel):
     driver_name: list[str] | None = []
@@ -39,6 +49,7 @@ class ExtractedFilters(BaseModel):
     start_time: str | None = None
     end_time: str | None = None
     limit_to_latest: int | None = None   # 1 for singular "latest trip", N for "last N trips", 30 for plain "latest/recent trips"
+    events : Literal['max', 'min'] | int | None = None 
 
 
 def extract_filters(state: AgentState):
@@ -53,9 +64,9 @@ def extract_filters(state: AgentState):
         logger.info(f'LLM extracted: {llm_response}')
 
         if llm_response.driver_name:
-            url = os.getenv('LM_API_URL')
-            auth_token = os.getenv('LM_ACCESS_TOKEN')
-            id_token = os.getenv('LM_ID_TOKEN')
+            url = "https://api.lightmetrics.co/v2"
+
+            auth_token, id_token = auth_manager._get_access_token()
             
             headers = {
             'Authorization': f"Bearer {auth_token}",
@@ -111,14 +122,14 @@ def ask_timestamp(state: AgentState):
     except Exception as e:
         logger.error('failed in ask_timestamp', exc_info=True)
         return {}
-
+    
 
 def fetch_trips_with_expiry(state: AgentState):
     logger.info('fetching trips with expiry')
     try:
-        url = os.getenv('LM_API_URL')
-        auth_token = os.getenv('LM_ACCESS_TOKEN')
-        id_token = os.getenv('LM_ID_TOKEN')
+        url = "https://api.lightmetrics.co/v2"
+
+        auth_token, id_token = auth_manager._get_access_token()
         headers = {
             'Authorization': f"Bearer {auth_token}",
             'id-token': id_token,
@@ -159,17 +170,10 @@ def fetch_trips_with_expiry(state: AgentState):
         
         else:
             params = {}
-            logger.info(request_url)
-            logger.info(params)
-            logger.info(headers)
-            logger.info(control_number)
             
             response = fetch_all_trips(url=request_url, base_params=params, skip=0, control_number=control_number)
         
-        logger.info(f"{params}, {request_url}")
         
-        logger.info(f'LM API: {response.status_code}')
-
         ## Continuing only if status code 200
         if response.status_code != 200:
             return {'all_trips': [], 'chat_response': f'Failed to fetch trips (status {response.status_code}).'}
@@ -264,10 +268,13 @@ def check_trips(state : AgentState):
     
     return "show results" 
 
+
 def check_trips_node(state : AgentState):
     return {'first_query' : False}
 
+
 def show_results(state: AgentState):
+    logger.info({'drivers' : state.chosen_driver, 'assets' : state.chosen_asset_id, 'timestamp' : state.chosen_timestamp})
     logger.info('Showing results')
  #Checking if we are to show the full trip list or the filtered list
     if state.first_query:
@@ -280,13 +287,12 @@ def show_results(state: AgentState):
     interrupt_payload = {
         'message': 'show_results',
         'trips': trips[:state.limit_to_latest] if state.limit_to_latest else trips,
-        'summary': f"Results are shown in the panel" if len(trips)>0 else state.chat_response,
+        'summary': f"" if len(trips)>0 else state.chat_response,
         'first': first_time
     }
 
     if first_time:
         interrupt_payload['filters'] = {
-
             'driver': {
                 'driverId': state.chosen_driver[0]['driverId'],
                 'driverName': state.chosen_driver[0]['driverName']
@@ -345,20 +351,20 @@ class ExtractedFilters1(BaseModel):
     start_time: str | None = None
     end_time: str | None = datetime.now()
     limit_to_latest: int | None = None   # 1 for singular "latest trip", N for "last N trips", 30 for plain "latest/recent trips"
-
-
+    events : Literal['max', 'min'] | int | None = None  
 
 def merge_filters_from_text(state: AgentState):
-    
     try:
         active_filters_desc = describe_active_filters(state)
 
         structured_llm = llm_for_advance_reasoning.with_structured_output(ExtractedFilters1)
+
         extracted = structured_llm.invoke([
             HumanMessage(content=state.dvr_raw_text or ''),
             SystemMessage(content = f"Filters already active {active_filters_desc}"),
             SystemMessage(content=merge_query)
         ])
+
         logger.info(f'Filters already active : {active_filters_desc}\n narrow-down extraction: {extracted}')
 
         chosen_driver = state.chosen_driver
@@ -380,7 +386,6 @@ def merge_filters_from_text(state: AgentState):
 
         driver_ids = [d['driverId'] for d in (chosen_driver or [])]
 
-        #
         filtered = filter_enriched_trips(
             state.all_trips or [],
             driver_ids=driver_ids or None, 
@@ -401,6 +406,26 @@ def merge_filters_from_text(state: AgentState):
         }
 
         if filtered:
+
+            event_filter = extracted.events
+            logger.info(f"Event Count {event_filter}")
+            
+            if event_filter == 'max':
+                max_count = max(trip['totalEvents'] for trip in filtered)
+                filtered = [trip for trip in filtered if trip['totalEvents'] == max_count]
+            
+            elif event_filter == 'min':
+                min_count = min(trip['totalEvents'] for trip in filtered)
+                filtered = [trip for trip in filtered if trip['totalEvents'] == min_count]
+
+            elif isinstance(event_filter, int):
+                chosen_trip = []
+                for trip in filtered:
+                    if trip['totalEvents'] == event_filter:
+                        chosen_trip.append(trip)
+                filtered = chosen_trip
+
+
             base_updates.update({
                 'filter_trips': filtered,
                 'results_shown': False,
@@ -423,17 +448,20 @@ def merge_filters_from_text(state: AgentState):
         logger.error('failed in merge_filters_from_text', exc_info=True)
         return {'chat_response': 'Could not understand the filter request.'}
 
+
 class DvrIntent(BaseModel):
-    intent: Literal['general_question', 'narrow_trips', 'dvr_request']
+    intent: Literal['general_question', 'show_trips', 'dvr_request']
     dvr_type: Literal['clip', 'timelapse'] | None = None
     trip_id: str | None = None
     start_time: str | None = None
     end_time: str | None = None
 
 
-# To extract the purpose of the query after the data is shown
-def extract_dvr_intent(state: AgentState):
+class refetch(BaseModel):
+    refetch : bool | None = None
 
+
+def extract_dvr_intent(state: AgentState):
     logger.info('extracting DVR intent from message')
     text = state.dvr_raw_text or ''
 
@@ -458,42 +486,25 @@ def extract_dvr_intent(state: AgentState):
 Trips currently shown to the user: {trip_summary}
 Filters currently active: {active_filters_desc}
 
-Classify this message into exactly one of:
-
-1. 'dvr_request' — the user wants DVR footage or a timelapse for a trip. Resolve trip_id,
-   dvr_type, and start_time (end_time only if explicitly given — see time rules below).
-
-2. 'narrow_trips' — the user is PROVIDING a detail that could be used to filter or narrow
-   the trip list: a driver, asset, trip ID, event type, date, or time of day. This applies
-   regardless of phrasing — a command ("show only...") and a statement ("an accident
-   happened around 3 AM") are both narrow_trips if they supply new identifying or
-   time/event information.
-
-3. 'general_question' — the user is ASKING something ABOUT the trips already shown,
-   without supplying any new filtering detail — e.g. "which trip had the most
-   violations", "summarize the incidents", "how many trips are there".
-
-Rule of thumb: informing something narrows; asking something questions.
-
-Time extraction rules for dvr_request (apply only when intent is dvr_request):
-- EXACT phrasing ("from X", "at X", "starting at X") → return X as start_time, with
-  NO adjustment.
-- APPROXIMATE/incident phrasing ("around X", "near X", "an accident occurred at X")
-  → subtract 2 minutes 30 seconds from X and return that as start_time.
-- Only set end_time if the user explicitly gives a second time ("from X to Y",
-  "between X and Y"). Otherwise leave end_time unset — duration is chosen separately
-  via a dropdown, not extracted here.
-- Return times as HH:MM (24-hour) unless a specific date is mentioned, in which case
-  return full ISO 8601.
+{intent_query}
 """
         structured_llm = llm_for_advance_reasoning.with_structured_output(DvrIntent)
         response = structured_llm.invoke([HumanMessage(content=text), SystemMessage(content=system)])
         logger.info(f'intent: {response}')
 
 ### the parameters from the second query will be merged with the new parameters
-        if response.intent == 'narrow_trips':
+        if response.intent == 'show_trips':
             logger.info('>>> BEFORE merge_filters_from_text call')
             updated_state = merge_filters_from_text(state)
+
+            # updated_state_summary = describe_active_filters(updated_state)
+            # current_state_summary = describe_active_filters(state)
+
+            # state_summary = f"current_state : {current_state_summary}\n update_state : {updated_state_summary}" 
+
+            # refetch_llm = llm_for_advance_reasoning.with_structured_output(refetch)
+            # response = refetch_llm.invoke([HumanMessage(content=state_summary), SystemMessage(content=)])
+
             logger.info('>>> AFTER merge_filters_from_text call, about to log state')
             try:
                 logger.info(f'>>> state.chosen_driver = {state.chosen_driver}')
@@ -585,7 +596,6 @@ Time extraction rules for dvr_request (apply only when intent is dvr_request):
         logger.error('failed in extract_dvr_intent', exc_info=True)
         return {'chat_response': e}
 
-
 def route_after_intent(state: AgentState):
     if state.dvr_request_params:
         return 'confirm'
@@ -628,6 +638,7 @@ def confirm_dvr(state: AgentState):
 
     return {'dvr_confirmed': True, 'dvr_request_params': updated}
 
+
 def route_confirm(state: AgentState):
     return 'submit' if state.dvr_confirmed else 'loop'
 
@@ -640,9 +651,9 @@ def submit_dvr_request(state: AgentState):
         if not params:
             return {'chat_response': 'No DVR parameters provided.'}
 
-        url = os.getenv('LM_API_URL')
-        auth_token = os.getenv('LM_ACCESS_TOKEN')
-        id_token = os.getenv('LM_ID_TOKEN')
+        url = "https://api.lightmetrics.co/v2"
+
+        auth_token, id_token = auth_manager._get_access_token()
         headers = {
             'Authorization': f"Bearer {auth_token}",
             'id-token': id_token,
