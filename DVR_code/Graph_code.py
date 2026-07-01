@@ -406,7 +406,6 @@ def merge_filters_from_text(state: AgentState):
         }
 
         if filtered:
-
             event_filter = extracted.events
             logger.info(f"Event Count {event_filter}")
             
@@ -424,7 +423,6 @@ def merge_filters_from_text(state: AgentState):
                     if trip['totalEvents'] == event_filter:
                         chosen_trip.append(trip)
                 filtered = chosen_trip
-
 
             base_updates.update({
                 'filter_trips': filtered,
@@ -483,11 +481,11 @@ def extract_dvr_intent(state: AgentState):
         active_filters_desc = describe_active_filters(state)
 
         system = f"""
-Trips currently shown to the user: {trip_summary}
-Filters currently active: {active_filters_desc}
+        Trips currently shown to the user: {trip_summary}
+        Filters currently active: {active_filters_desc}
 
-{intent_query}
-"""
+        {intent_query}"""
+        
         structured_llm = llm_for_advance_reasoning.with_structured_output(DvrIntent)
         response = structured_llm.invoke([HumanMessage(content=text), SystemMessage(content=system)])
         logger.info(f'intent: {response}')
@@ -695,7 +693,6 @@ def submit_dvr_request(state: AgentState):
     except Exception as e:
         logger.error('failed in submit_dvr_request', exc_info=True)
         return {'chat_response': 'Something went wrong submitting the DVR request.'}
-    
     
 
 def create_graph():

@@ -63,3 +63,11 @@
 2026-07-01 11:32:50,752 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
 2026-07-01 11:32:51,066 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 503 Service Unavailable"
 2026-07-01 11:32:59,048 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-07-01 11:59:07,606 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:59:07,606 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:59:09,018 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:59:09,019 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:58:09.018969
+2026-07-01 11:59:10,207 | debug_logger | INFO | RequestID: N/A | FleetConfigManager initialized with dynamic config enabled (TTL: 3600s)
+2026-07-01 11:59:10,208 | debug_logger | INFO | RequestID: N/A | OAuth2 token expired or missing, fetching new token
+2026-07-01 11:59:11,405 | httpx | INFO | RequestID: N/A | HTTP Request: POST https://api.lightmetrics.co/v2/auth/oauth2/token "HTTP/1.1 200 OK"
+2026-07-01 11:59:11,405 | debug_logger | INFO | RequestID: N/A | OAuth2 token acquired, expires at 2026-07-02 11:58:11.405521
