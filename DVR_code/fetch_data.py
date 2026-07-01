@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import logging
-from utils.auth import auth_manager
+from utils.auth import auth_manager, get_headers
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,12 +19,6 @@ class response_result(BaseModel):
 
     
 def fetch_all_trips(url: str, base_params: dict, skip: int, control_number : int):
-    auth_token, id_token = auth_manager._get_access_token()
-    logging.info(f"auth_token : {auth_token}")
-    headers = {
-            'Authorization': f"Bearer {auth_token}",
-            'id-token': id_token,
-            'x-lm-desired-account': 'lmpresales'}
     
     all_trips = []
     limit = 40
@@ -38,7 +32,7 @@ def fetch_all_trips(url: str, base_params: dict, skip: int, control_number : int
             'skip': skip
         }
 
-        response = requests.get(url=url, params=params1, headers=headers)
+        response = requests.get(url=url, params=params1, headers=get_headers())
         print(response.status_code)
         if response.status_code != 200:
             logger.error(f"API Error {response.status_code}: {response.text}")
