@@ -13,7 +13,7 @@ from DVR_code.fetch_data import fetch_all_trips
 from dotenv import load_dotenv
 from DVR_code.helper_function import filter_enriched_trips, resolve_driver_matches, to_aware_utc, describe_active_filters
 import requests
-from utils.auth import auth_manager
+from utils.auth import auth_manager, get_headers
 import json
 import logging
 load_dotenv()
@@ -32,14 +32,6 @@ llm_for_advance_reasoning = ChatOpenAI(model='gpt-5.4', api_key=os.getenv('OPENA
 
 
 # logger = debug_logger()
-
-url = "https://api.lightmetrics.co/v2"
-auth_token, id_token = auth_manager._get_access_token()
-logging.info(f"auth_token : {auth_token}")
-headers = {
-            'Authorization': f"Bearer {auth_token}",
-            'id-token': id_token,
-            'x-lm-desired-account': 'lmpresales'}
 
 class ExtractedFilters(BaseModel):
     driver_name: list[str] | None = []
@@ -66,14 +58,7 @@ def extract_filters(state: AgentState):
         if llm_response.driver_name:
             url = "https://api.lightmetrics.co/v2"
 
-            auth_token, id_token = auth_manager._get_access_token()
-            
-            headers = {
-            'Authorization': f"Bearer {auth_token}",
-            'id-token': id_token,
-            'x-lm-desired-account': 'lmpresales'}
-
-            request = requests.get(url = f"{url}/fleets/{state.fleet_id}/drivers/list?search={str(llm_response.driver_name).lower()}", headers=headers)
+            request = requests.get(url = f"{url}/fleets/{state.fleet_id}/drivers/list?search={str(llm_response.driver_name).lower()}", headers= get_headers())
             data = request.json()
             logger.info(f"{state.fleet_id}, {llm_response.driver_name}")
             matching_drivers_list = resolve_driver_matches(state.fleet_id, llm_response.driver_name)
@@ -83,6 +68,7 @@ def extract_filters(state: AgentState):
         
         logger.info(f"driver info : {matching_drivers_list}")
         logger.info(llm_response.limit_to_latest)
+        logger.info(llm_response.events)
         return {
             'chosen_driver': matching_drivers_list,
             'chosen_asset_id': llm_response.asset_id,
@@ -91,6 +77,7 @@ def extract_filters(state: AgentState):
             'chosen_timestamp': timestamp(
                 start_time=llm_response.start_time, end_time=llm_response.end_time
             ) if llm_response.start_time and llm_response.end_time else None,
+            'chosen_events_count' : llm_response.events,
             'limit_to_latest' : llm_response.limit_to_latest
         }
     except Exception as e:
@@ -250,6 +237,26 @@ def fetch_trips_with_expiry(state: AgentState):
                 'events': events,
                 'totalEvents': len(events)
             })
+
+
+        if enriched:
+            event_filter = state.chosen_events_count
+            logger.info(f"Event Count {event_filter}")
+                
+            if event_filter == 'max':
+                max_count = max(trip['totalEvents'] for trip in enriched)
+                enriched = [trip for trip in enriched if trip['totalEvents'] == max_count]
+                
+            elif event_filter == 'min':
+                min_count = min(trip['totalEvents'] for trip in enriched)
+                enriched = [trip for trip in enriched if trip['totalEvents'] == min_count]
+
+            elif isinstance(event_filter, int):
+                chosen_trip = []
+                for trip in enriched:
+                    if trip['totalEvents'] == event_filter:
+                        chosen_trip.append(trip)
+                enriched = chosen_trip
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         logger.info(f'enriched {len(enriched)} trips')
@@ -485,7 +492,7 @@ def extract_dvr_intent(state: AgentState):
         Filters currently active: {active_filters_desc}
 
         {intent_query}"""
-        
+
         structured_llm = llm_for_advance_reasoning.with_structured_output(DvrIntent)
         response = structured_llm.invoke([HumanMessage(content=text), SystemMessage(content=system)])
         logger.info(f'intent: {response}')
@@ -651,12 +658,6 @@ def submit_dvr_request(state: AgentState):
 
         url = "https://api.lightmetrics.co/v2"
 
-        auth_token, id_token = auth_manager._get_access_token()
-        headers = {
-            'Authorization': f"Bearer {auth_token}",
-            'id-token': id_token,
-            'x-lm-desired-account': 'lmpresales'
-        }
 
         api_params = {
             'fleetId': state.fleet_id,
@@ -672,7 +673,7 @@ def submit_dvr_request(state: AgentState):
         api_url = f"{url}/fleets/{state.fleet_id}/dvr/create-upload-request"
         logger.info(f'DVR submit: type={params.get("type")}, params={api_params}')
 
-        dvr_response = requests.post(url=api_url, params=api_params, headers=headers)
+        dvr_response = requests.post(url=api_url, params=api_params, headers= get_headers())
         logger.info(f'DVR response: {dvr_response.status_code}')
 
         if dvr_response.status_code == 200:

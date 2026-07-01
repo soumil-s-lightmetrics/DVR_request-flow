@@ -36,8 +36,9 @@ class AgentState(BaseModel):
     chosen_asset_id : list[str] | None = None
     chosen_trip_id : str | None = None
     chosen_event : list[str] | None = None
+    chosen_events_count : Literal['max', 'min'] | int | None = None
 
-    chosen_event_index : int | None = None
+    chosen_events_index : int | None = None
 
     chosen_timestamp : timestamp | None = None
 

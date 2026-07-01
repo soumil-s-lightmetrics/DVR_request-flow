@@ -5,7 +5,7 @@ from datetime import datetime
 from DVR_code.state import AgentState
 from datetime import timezone  # add this import alongside datetime, timedelta
 import logging
-from utils.auth import auth_manager
+from utils.auth import auth_manager, get_headers
 import os
 
 logging.basicConfig(
@@ -14,17 +14,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger('Helper Functions')
-from utils.auth_util import AuthManager  # adjust import path to wherever you place this file
-
-# logger = debug_logger()
-
-url = "https://api.lightmetrics.co/v1"
-auth_token, id_token = auth_manager._get_access_token()
-logging.info(f"auth_token : {auth_token}")
-headers = {
-            'Authorization': f"Bearer {auth_token}",
-            'id-token': id_token,
-            'x-lm-desired-account': 'lmpresales'}
 
 def describe_active_filters(state: AgentState) -> str:
     parts = []
@@ -72,12 +61,14 @@ def filter_enriched_trips(trips, driver_ids=None, asset_id=None, event_list=None
 def resolve_driver_matches(fleet_id, driver_names : list):
     if not driver_names:
         return []
+    url = "https://api.lightmetrics.co/v2"
+
 
     driver_matches = []
     for drivers in driver_names:
         Params={ 'search' : drivers, 'limit' : 50}
         logger.info(Params)
-        request = requests.get(url=f"{url}/fleets/{fleet_id}/drivers/list", params=Params, headers=headers)
+        request = requests.get(url=f"{url}/fleets/{fleet_id}/drivers/list", params=Params, headers=get_headers())
         logger.info(request.json())
         data = request.json()
         driver_matches.extend([{'driverId': d['driverId'], 'driverName': d['driverName']} for d in data.get('rows', [])])
