@@ -15,14 +15,17 @@ RUN curl -L $FILEBEAT_URL | tar -xz -C /tmp/ && \
 
 RUN mkdir -p /usr/src/app/logs && \
     chmod -R 777 /usr/src/app/logs
-
+    
+COPY requirements-app.txt ./
+RUN pip install -r requirements-app.txt
 COPY requirements-app.txt ./
 RUN pip install -r requirements-app.txt
 
 ADD utils ./utils
 ADD tools ./tools
-COPY main.py config_log.py load_bulk_docs.py load_bulk_docs_categorised.py assistant_rag.py logger.py start_container.sh ./
-COPY rag_utils/openai_responses_rag.py ./rag_utils/
+ADD DVR_code ./DVR_code
+COPY main.py main-DVR.py config_log.py load_bulk_docs.py load_bulk_docs_categorised.py assistant_rag.py logger.py start_container.sh ./
+
 COPY rag_utils/pinecone_openai_rag.py ./rag_utils/
 COPY files/filebeat/filebeat.yml.template /etc/filebeat/
 
