@@ -1,0 +1,27 @@
+{
+  "latest_release_notes": {
+    "companion_app": [
+      {
+        "fd_article_url": "https://lightmetrics.freshdesk.com/a/solutions/articles/61000315688"
+      },
+      {
+        "fd_article_url": "https://lightmetrics.freshdesk.com/a/solutions/articles/61000315689"
+      }
+    ],
+    "fleet_portal": [
+      {
+        "fd_article_url": "https://lightmetrics.freshdesk.com/a/solutions/articles/61000315654"
+      }
+    ],
+    "master_portal": [
+      {
+        "fd_article_url": "https://lightmetrics.freshdesk.com/a/solutions/articles/61000315655"
+      }
+    ],
+    "sdk": [
+      {
+        "fd_article_url": "https://lightmetrics.freshdesk.com/a/solutions/articles/61000314875"
+      }
+    ]
+  }
+}

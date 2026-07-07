@@ -1,0 +1,97 @@
+# RAG Evaluation Configuration
+# This file defines the configuration for evaluating RAG handlers
+
+# Handlers to evaluate
+handlers:
+  oai-responses:
+    enabled: true
+    class_name: "OpenAIResponsesHandler"
+    module: "rag_utils.openai_responses_rag"
+    fleet_configs:
+      - null  # No fleet config for OpenAI Responses handler
+
+  pinecone-oai:
+    enabled: true
+    class_name: "PineconeOpenAIResponsesHandler"
+    module: "rag_utils.pinecone_openai_rag"
+    fleet_configs:
+      - shield
+      - non-shield
+      - null  # No fleet config
+
+  oai-assistant:
+    enabled: true
+    class_name: "AssistantUtil"
+    module: "assistant_rag"
+    fleet_configs:
+      - null  # No fleet config for OpenAI Assistant handler
+
+# Fleet configurations
+fleet_configs:
+  shield:
+    fleet_portal_version: "v9.20.0"
+    device_apk_version: "v1.20.4"
+    camera_models:
+      - "mitac-gemini"
+      - "mitac-sprint-k220"
+    disabled_standard_events:
+      - "Traffic-Light-Violated"
+    plan: "SHIELD"
+
+  non-shield:
+    fleet_portal_version: "v10.8.0"
+    device_apk_version: "v1.22.5"
+    camera_models:
+      - "jimi-jc261"
+      - "jimi-jc261p"
+    disabled_standard_events: []
+    plan: "NON_SHIELD"
+
+# Ragas metrics to evaluate
+metrics:
+  - faithfulness
+  - answer_relevancy
+  - context_precision
+  - context_recall
+
+# Data sources
+data:
+  golden_questions: "evaluation/golden-questions.json"
+  ground_truth: "evaluation/ground_truth.json"
+  collected_data_dir: "evaluation/collected_data"
+
+# Output configuration
+output:
+  results_dir: "evaluation/results"
+  timestamp_runs: true
+  save_formats:
+    - json
+    - csv
+    - html
+
+# Ragas evaluation settings
+ragas:
+  llm:
+    model: "gpt-4o-mini"
+    temperature: 0
+    max_tokens: 1000
+  embeddings:
+    model: "text-embedding-3-small"
+
+# OpenAI configuration (reads from environment variables)
+openai:
+  api_key_env: "OPENAI_API_KEY"
+  vector_store_id_env: "OPENAI_VEC_STORE_ID"
+  model: "gpt-4o"
+
+# Data collection settings
+collection:
+  max_retries: 3
+  retry_delay: 2  # seconds
+  timeout: 60  # seconds per query
+  save_incremental: true
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

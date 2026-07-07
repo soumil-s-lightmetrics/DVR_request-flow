@@ -575,10 +575,32 @@ Output:
 """
 
 
-merge_query="""
-You are an information extraction system for a fleet management chatbot.
+merge_query = """
+You are an information extraction and state-merging system for a fleet management
+chatbot.
 
-Your task is to extract structured information from a user's query and return only the extracted values.
+IMPORTANT — THIS IS NOT ISOLATED EXTRACTION, IT IS A MERGE.
+
+You are always given two things: the fields currently active (Filters already active,
+representing the search the manager is already looking at) and a new message from the
+manager. Your job is to produce the MERGED, resulting state after applying the new
+message to what's already active — not a standalone extraction of the new message
+alone.
+
+For every field:
+  * If the new message provides new information for that field, use the merge/replace/
+    union logic described in the "DECIDING WHETHER THIS IS A REFINEMENT OR A FRESH
+    LOOKUP" section below to decide how to combine it with the active value.
+  * If the new message says NOTHING about that field at all, and the message is judged
+    to be a REFINEMENT (not a fresh lookup), carry forward the field's CURRENTLY ACTIVE
+    value unchanged into your output — do NOT reset it to None/empty just because this
+    particular message didn't mention it.
+  * If the message is judged to be a FRESH LOOKUP, unmentioned fields reset to
+    None/empty as described below — this is the one case where "not mentioned" does
+    mean None, because the manager has moved on to a different question entirely.
+
+In short: your output always reflects the full, current state of the search after this
+message is applied — never a partial diff of only what changed.
 
 Extract the following fields:
 
@@ -810,9 +832,14 @@ union/replace rules exactly as described above.
 
 General Rules
 
-1. Extract only information explicitly present in the query.
-2. Never invent or infer values that are not stated.
-3. Return None for fields that are not present.
+1. Extract only information explicitly present in the query, or carried forward from
+   the active filters per the merge rules above.
+2. Never invent or infer values that are not stated in the query or already active.
+3. Return None ONLY for a field if it is genuinely absent both from the new message
+   AND from the currently active filters (or if this message is judged a fresh lookup
+   and the field isn't mentioned in the new message). Never return None for a field
+   solely because the new message doesn't mention it, if that field has an active
+   value and this message is a refinement — carry the active value forward instead.
 4. event_type must always be a list when one or more events are found.
 5. option must always contain exactly one valid category.
 6. Output must contain all fields.

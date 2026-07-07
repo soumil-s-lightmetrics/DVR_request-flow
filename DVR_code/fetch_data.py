@@ -1,142 +1,122 @@
-import requests
-import logging
-from pydantic import BaseModel
 import os
+import requests
+from pydantic import BaseModel
 from dotenv import load_dotenv
+
+from logger import debug_logger
+from utils.auth import auth_manager
+
 load_dotenv()
-import logging
-from utils.auth import auth_manager, get_headers
+debug_logger = debug_logger()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s | %(levelname)-8s | %(funcName)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger('DVR_Graph')
-class response_result(BaseModel):
-    text : list | None = None
-    status_code : int | None = None
 
-    
-def fetch_all_trips(url: str, base_params: dict, skip: int, control_number : int):
-    
+def fetch_all_trips(
+        url: str,
+        base_params: dict,
+        skip: int,
+        control_number: int):
+
     all_trips = []
-    limit = 40
-    while skip< control_number:
+    limit = 50
 
-        params1 = {
+    while skip < control_number:
+
+        trip_params = {
             **base_params,
-            'key' : "startTimeUTC",
-            'sort' : 'desc',
-            'limit' : limit,
+            'key': "startTimeUTC",
+            'sort': 'desc',
+            'limit': limit,
             'skip': skip
         }
 
-        response = requests.get(url=url, params=params1, headers=get_headers())
-        print(response.status_code)
-        if response.status_code != 200:
-            logger.error(f"API Error {response.status_code}: {response.text}")
-            break
-            
         try:
-            data = response.json()
+            data = auth_manager.make_api_request(
+                client_id = os.getenv('CLIENT_ID'),
+                endpoint = url,
+                params = trip_params
+            )
         except Exception as e:
-            logger.error(f"Failed to parse JSON response: {e}")
+            debug_logger.error(f"Failed to parse JSON response: {e}")
             break
 
-        rows = data.get('rows', [])
-        
-        if not rows:
-            logger.info("No more rows returned from API. Ending pagination loop.")
+        trips = data.get('rows', [])
+
+        if not trips:
+            debug_logger.info(
+                "No more rows returned from API. Ending pagination loop."
+            )
             break
-            
-        # 2. Append the current batch of trips to our master list
-        all_trips.extend(rows)
-        
-        # 3. Break if we received fewer rows than the requested limit
-        if len(rows) < limit:
-            logger.info(f"Received {len(rows)} rows, which is less than limit {limit}. Ending pagination loop.")
+
+        all_trips.extend(trips)
+
+        if len(trips) < limit:
+            debug_logger.info(
+                f"Received {len(trips)} rows, less than limit {limit}."
+                " Ending pagination loop."
+            )
             break
-            
-        # 4. Increment skip to move to the next page
+
         skip += limit
 
-    if len(all_trips)>0:
-        status_code = 200
-    else : 
-        status_code = 400
-
-    logger.info(f"Total trips fetched: {len(all_trips)}")
-    return response_result(
-        text=all_trips,
-        status_code=status_code
-    )
+    debug_logger.info(f"Total trips fetched: {len(all_trips)}")
+    return all_trips
 
 
-def fetch_all_drivers(url: str, base_params : dict, headers: dict, limit: int = 50, skip: int = 0):
-    
+def fetch_all_drivers(
+        url: str,
+        base_params: dict,
+        limit: int = 50,
+        skip: int = 0):
+
     all_drivers = []
-    
+
     while True:
-        # Build params with lookups mirroring your trip query patterns
-        params = {
+        trip_params = {
             **base_params,
             'limit': limit,
             'skip': skip
         }
 
-        logger.info(f"Fetching drivers with skip={skip}, limit={limit}'")
+        debug_logger.info(f"Fetching drivers with skip={skip}, limit={limit}")
+
         try:
-            response = requests.get(url=url, params=params, headers=headers)
+            data = auth_manager.make_api_request(
+                client_id = os.getenv('CLIENT_ID'),
+                endpoint = url,
+                params = trip_params
+            )
         except Exception as e:
-            logger.error(f"Network request to drivers endpoint failed: {e}")
-            break
-        
-        if response.status_code != 200:
-            logger.error(f"API Error {response.status_code}: {response.text}")
-            break
-            
-        try:
-            data = response.json()
-        except Exception as e:
-            logger.error(f"Failed to parse JSON driver response: {e}")
+            debug_logger.error(f"Failed to parse JSON driver response: {e}")
             break
 
         rows = data.get('rows', [])
-        
-        # ── CRITICAL FIX: Explicit termination checks ──
-        # 1. Break if rows array is empty, None, or not structural
+
         if not rows:
-            logger.info("No more driver records returned from API. Ending pagination loop.")
+            debug_logger.info(
+                "No more driver records returned. Ending pagination loop."
+            )
             break
-            
-        # 2. Extract and append structural elements 
+
         for match_driver in rows:
             all_drivers.append({
                 'driverName': match_driver.get('driverName', 'UNASSIGNED'),
                 'driverId': match_driver.get('driverId', 'UNASSIGNED')
             })
-        
-        # 3. Break if we received a partial tail page (fewer rows than limit requested)
+
         if len(rows) < limit:
-            logger.info(f"Received {len(rows)} drivers, less than limit {limit}. Loop terminated.")
+            debug_logger.info(
+                f"Received {len(rows)} drivers, less than limit {limit}."
+                " Loop terminated."
+            )
             break
-            
-        # 4. Advance offset page pointer
+
         skip += limit
 
-        # Hard guardrail to match your 3*limit pagination boundary rule
         if skip > 3 * limit:
-            logger.warning("Pagination hit depth guardrail safety breaker.")
+            debug_logger.warning("Pagination hit depth guardrail safety breaker.")
             break
 
-    if len(all_drivers) > 0:
-        status_code = 200
-    else:
-        status_code = 400
-
-    logger.info(f"Total structured drivers matched and fetched: {len(all_drivers)}")
-    return response_result(
-        text=all_drivers,
-        status_code=status_code
+    debug_logger.info(
+        f"Total structured drivers matched and fetched: {len(all_drivers)}"
     )
+    return all_drivers

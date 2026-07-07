@@ -1,0 +1,21 @@
+IMMEDIATE
+- Add llm data to local pg and test
+
+IMPORTANT
+- Implement pg connection pooling
+- Use cur.execute(sql, data) instead of string formatting to avoid risk of SQL injection!
+- Add document title to metadata. Use title and source ID to generate source links
+- Delete streamlit
+- Remove session id key from sessionObjectMap after session expires
+- Check for session_id key expiry (may give error if session expires)
+
+MINOR
+- Review DB-side unique constraints to the tables
+- Parallelize load_bulk_docs
+
+DVR-Request-Flow
+- Manage error handling, displaying user the error
+- Autocomplete via direct API rather than loading data
+- Create a testing report using the logs
+
+

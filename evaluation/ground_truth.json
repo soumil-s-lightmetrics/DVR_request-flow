@@ -1,0 +1,404 @@
+{
+  "_description": "Ground truth answers for golden questions. Supports fleet-specific answers.",
+  "_instructions": "Format: { 'question': { 'no-fleet': {...}, 'shield': {...}, 'non-shield': {...} } }. If answer is same for all configs, use 'default' key.",
+  "_note": "This file was auto-generated from existing response files. Review and edit as needed.",
+
+  "How do I provision the device?": {
+    "no-fleet": {
+      "ground_truth": "To provision your device, navigate to the Assets/Devices tab in master portal and follow these steps:\n\n1. **Individual Provisioning**: Click the pencil icon next to the device you wish to setup. This will open a menu where you can assign an asset ID, fleet ID, and associate the duty type for the asset.\n2. **Bulk Provisioning**: You can setup multiple devices at once using the CSV upload option at the bottom of the page. Download the CSV to see available devices, update their details, and upload it back to the portal.\n\nPlease ensure that the asset ID is unique to avoid errors during the process. If the asset ID field is left empty, the device ID (IMEI) will be used as the default ID.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "To provision a device, follow these steps in the Assets Tab of the portal:\n\n1. **Select the Device**: Locate the device that has been semi-provisioned by the service provider in the Devices section.\n2. **Complete Provisioning**: Click the pencil icon next to the device. Assign the asset name, select the appropriate duty type for the vehicle, and set the default driver ID.\n3. **Finalize**: Click on \"Provision Device\" to complete the process and make the asset fully operational.\n\nFor bulk provisioning, you can use the CSV upload option found at the MANAGE ASSETS tab. First, download the CSV to view available devices and update their details. Then, upload the updated CSV back to the portal. Note that if the asset ID field is left empty, the device IMEI will be used as the ID.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "To provision a device, follow these steps in the Assets Tab of the portal:\n\n1. **Select the Device**: Locate the device that has been semi-provisioned by the service provider in the Devices section.\n2. **Complete Provisioning**: Click the pencil icon next to the device. Assign the asset name, select the appropriate duty type for the vehicle, and set the default driver ID.\n3. **Finalize**: Click on \"Provision Device\" to complete the process and make the asset fully operational.\n\nFor bulk provisioning, you can use the CSV upload option found at the MANAGE ASSETS tab. First, download the CSV to view available devices and update their details. Then, upload the updated CSV back to the portal. Note that if the asset ID field is left empty, the device IMEI will be used as the ID.",
+      "confidence": "high"
+    }
+  },
+  "How do I mount the camera?": {
+    "no-fleet": {
+      "ground_truth": "Proper camera mounting depends on the camera variant being used:\n\n* **In-Cabin Camera**: Mount this on the windscreen with the IR LED positioned at the bottom left from the driver's perspective to ensure upright video.\n* **Outside-Mounted Weatherproof Camera**: This should be mounted according to specific orientation guidelines to ensure upright capture.\n* **Driver-Facing Placement**: The camera should be positioned so that both eyes of the driver are clearly visible. It is recommended to mount it closer to the driver's side on the windshield rather than the center or passenger side.\n* **Road-Facing Placement**: Align the camera so that the horizon line is approximately in the middle of the frame. Ensure there is minimal obstruction from the vehicle's hood.\n* **General Guidelines**: Mount the camera as high on the windshield as possible. Wires should be routed around the windshield to avoid obstructing the driver's line of sight.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "For your hardware, follow these mounting instructions:\n\n* **Internal Driver Camera**: Mount on the windscreen so that the IR LED is at the bottom left from the driver's viewpoint. This ensures the captured video is upright.\n* **Weatherproof Camera**: Follow the orientation instructions provided in your installation materials to ensure upright image capture.\n* **Positioning**: Mount the camera as high on the windscreen as possible, off-center toward the driver. Ensure the position does not obstruct the driver's view of the road or traffic signs.\n* **Visibility**: The camera must be able to see both eyes of the driver for monitoring features to function correctly. Avoid mounting on the passenger side as this compromises system performance.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "To ensure correct operation, follow these mounting guidelines:\n\n* **Internal Camera**: Mount on the windshield with the IR LED at the bottom left from the driver's perspective.\n* **Weatherproof Camera**: Ensure the camera is oriented correctly to capture upright video as per the setup guide.\n* **Road View**: Align the camera so the horizon is in the middle of the frame with minimal hood obstruction.\n* **Driver View**: Position the camera closer to the driver than the center of the windshield so that both eyes are visible. Do not mount it at or below eye level.\n* **Installation**: Mount as high as possible on the windshield. Route all wiring around the windshield to keep the driver's view clear.",
+      "confidence": "high"
+    }
+  },
+  "What are the events detected using the road facing camera?": {
+    "no-fleet": {
+      "ground_truth": "The road-facing camera detects several safety and compliance events:\n\n* **Driving Behavior**: Harsh Acceleration, Harsh Braking, and Harsh Cornering.\n* **Lane Discipline**: Lane drifting (driving toward the edge of the lane).\n* **Signage Compliance**: Posted speed limit sign detection and traffic stop sign detection.\n* **Violations**: Violating a posted speed limit sign by more than the set grace speed, and stop sign violations where speed does not drop below the maximum within 15 seconds.\n* **Proximity**: Following the vehicle in front too closely (Tailgating).\n* **Fleet Rules**: Exceeding the maximum upper-speed limit set for the fleet.\n* **Regional Events**: Traffic Light violations are supported in specific geographies such as the US and Canada.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "The road-facing camera identifies the following events:\n\n* Harsh Acceleration, Harsh Braking, and Harsh Cornering.\n* Lane drifting (driving towards the edge of the lane).\n* Posted speed limit sign detection and traffic stop sign detection.\n* Violating a posted speed limit sign by more than the allowed grace speed.\n* Stop sign violations where the vehicle does not sufficiently slow down within 15 seconds.\n* Following the vehicle in front too closely.\n* Exceeding the maximum speed limit set for your fleet.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "The following events are detected by the road-facing camera:\n\n* **Safety Events**: Harsh Acceleration, Harsh Braking, and Harsh Cornering.\n* **Lane Use**: Lane drifting (moving toward the edge of the lane).\n* **Recognition**: Posted speed limit sign detection and traffic stop sign detection.\n* **Violations**: Exceeding the posted speed limit by more than the grace speed, and failing to slow down appropriately for a stop sign.\n* **Other Alerts**: Following too closely (Tailgating), traffic light violations (available in US and Canada), and exceeding the fleet's maximum speed limit.",
+      "confidence": "high"
+    }
+  },
+  "What is EDVR?": {
+    "default": {
+      "ground_truth": "EDVR (Event-Driven Video Retrieval) is a feature that allows you to request violation videos on demand. Important event videos are always captured, but standard quality is typically used for automatic uploads to conserve data. Fleet managers can then use the portal to request higher-quality versions of specific event videos when necessary, providing a balance between storage efficiency and bandwidth use.",
+      "confidence": "high"
+    }
+  },
+  "How do I request DVR access on the fleet portal?": {
+    "default": {
+      "ground_truth": "You can create a video request (DVR) in the portal through several methods:\n\n1. **From the Trip List**: Select a trip from the list and click the 'Request Video' button.\n2. **From the Video Request Page**: Navigate to the page, click 'Request Video', and use the 'Search Trip' modal to find the desired trip using Driver ID, Asset ID, or start time.\n3. **From Trip Details**: If a video is available for an ongoing or past trip, use the 'Request Video' button on the top right bar of the Trip Details page.\n\nOnce on the request page, use the timeline scrubber to select the time, choose the duration and quality, then click 'Request Video'. The system will process the request and upload the video if it is available on the device.",
+      "confidence": "high"
+    }
+  },
+  "What should I expect in a normal sequence when I turn on the car with the MioEye connected to power?": {
+    "default": {
+      "ground_truth": "When you turn on the vehicle with the camera connected to power, you should see the following sequence:\n\n1. **Powering Up**: Immediately after ignition is ON, the LED will show solid **Cyan** for approximately 5 seconds.\n2. **Booting**: The LED remains solid **Cyan** for about 30 seconds as the system starts up. You may hear an audio notification indicating the start of a new trip.\n3. **Operational**: Once working normally, the LED will blink every 15 seconds. A **Green** blinking LED means it is recording and connected to the internet; a **Blue** blinking LED means it is recording but has no internet connection.",
+      "confidence": "high"
+    }
+  },
+  "How do I update the base and region firmware?": {
+    "no-fleet": {
+      "ground_truth": "To update firmware, follow these steps in the Master Portal:\n\n1. **Select Assets**: Click the Assets tab and use filters to select the devices you want to update.\n2. **Initiate Update**: Click the Update Software icon (down arrow in a box).\n3. **Choose Firmware**: Select the appropriate tab for Base Image or Region Image.\n4. **Approve**: Select an approved version from the dropdown and click 'Approve Software'.\n\nThe camera will download the update from the backend and apply it during the next ignition cycle. Note that the device must have an application version later than 1.7.0 for over-the-air updates to work.",
+      "confidence": "high"
+    },
+    "shield": {
+        "ground_truth": "Unfortunately, I am not able to answer this question",
+        "confidence": "high"
+    },
+    "non-shield": {
+        "ground_truth": "Unfortunately, I am not able to answer this question",
+        "confidence": "high"
+    }
+  },
+  "What are Advanced configurations?": {
+    "no-fleet": {
+      "ground_truth": "Advanced configurations allow for fine-tuned control of the device and location-specific settings:\n\n* **Device Settings**: Adjustments for volume, audio alerts, and enabling/disabling the driver camera.\n* **Location Settings**: Selection of traffic sign types, sign units (mph/kmph), and setting the driver side in the cabin.\n* **Inputs**: Configuration for the Panic Button (capture image or video) and choosing the Driver ID source (e.g., NFC, BLE).\n* **Management**: Options for Driver Persistence and uploading debug media for support.\n\nThese settings can typically be applied to all duty types simultaneously.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Advanced configurations include specialized settings for your hardware:\n\n* **Panic Button**: Choose whether the system captures an image or video when the button is pressed.\n* **Device Parameters**: Controls for system volume and audio alerts.\n* **Location Settings**: Configurations for the type of traffic signs used and specifying which side of the cabin the driver is on.\n\nYou can use the 'Save for all duty types' option to apply these settings uniformly across your fleet.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Advanced configurations provide control over specific device features and environment settings:\n\n* **Panic Button**: Set the button to capture either an image or video when pressed.\n* **Miscellaneous**: Device-specific parameters like volume levels and audio alerts.\n* **Location**: Settings for traffic sign types, units, and driver positioning in the cabin.\n* **Other**: Configurations for Driver ID source and driver persistence.\n\nThese settings are usually applied to all duty types using the 'Save for all duty types' option to ensure consistency.",
+      "confidence": "high"
+    }
+  },
+  "Release notes 1.20.x": {
+    "no-fleet": {
+      "ground_truth": "Release notes for version 1.20.x include several updates and fixes across multiple versions:\n\n* **Version 1.20.8**: Fixed US speed sign violations where school/ramp signs were misidentified. Added support for rate limit modes in Neural Network compression and more slack for bad mounting detection on Gemini, EVO, and Sprint cameras.\n* **Version 1.20.7**: Fixed location-based speed sign suppression and browser playback issues for videos with audio. Resolved a JC261 identification bug and improved drowsiness detection stability.\n* **Version 1.20.6**: Increased provisioning expiry to 25 days. Added Ethernet support and GPS time synchronization for ST devices.\n* **Version 1.20.4**: Fixed traffic light violations during turns and reduced missed stop sign events. Resolved app crashes related to SD card unmounting and corrupted DVR files.\n* **Version 1.20.3**: Introduced vision improvements for vehicle detection, seat belt detection, and yawning detection. Added PII blurring options and GPS-based false stop sign suppression.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "The release notes for version 1.20.x include these key updates for your hardware:\n\n* **Fixes**: Corrected an issue where school zone and ramp signs were misidentified as normal speed signs in the US. Resolved a bug where only the road view was sent for bad mounting events instead of both views.\n* **Hardware Improvements**: Added more slack for Gemini, EVO, and Sprint models in bad mounting detection. Handled cases where internal flash issues prevented the application from running.\n* **System Performance**: Added support for neural network-based video compression rate limits. Fixed a bug in the crowd source module regarding false sign suppression and addressed stale vehicle speed data in violations.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Release notes for version 1.20.x include the following highlights:\n\n* **Vision & Detection**: Improved seat belt detection, yawning detection, and vehicle detection models. Added support for dual speed signs and GPS-based false stop sign suppression.\n* **Functional Fixes**: Resolved issues with traffic light violations during turns and stop sign detection accuracy. Fixed app crashes occurring with corrupted DVR files or unmounted SD cards.\n* **Hardware Updates**: Implemented fsync for DVR on Jimi devices and added GPS time synchronization. Added support for internet connectivity via Ethernet.\n* **Privacy & Data**: Added configuration options for blurring PII in the driver camera and included location data at 1-second frequency in DVR requests.",
+      "confidence": "high"
+    }
+  },
+  "What are the in-cabin alerts that are available?": {
+    "default": {
+      "ground_truth": "The camera provides audio alerts for road and driver-facing safety events. Additionally, notifications are available for:\n\n* **Trip Status**: Start of a new trip or when an ongoing trip is stopped.\n* **Driver Identification**: When a new driver signs in via the app, Bluetooth, Wi-Fi, or an NFC card.\n* **Connectivity**: Connecting to or disconnecting from an external Wi-Fi hotspot.\n* **System Updates**: Completion of a software upgrade.\n* **User Actions**: Live streaming start/end and custom events triggered by the app or camera button.\n\nSome of these alerts may be disabled by your service provider or fleet configuration.",
+      "confidence": "high"
+    }
+  },
+  "Is the AI working on the camera or in the cloud?": {
+    "default": {
+      "ground_truth": "The system utilizes AI in both locations. The camera features an advanced AI processing unit that performs real-time analysis while you are driving. In addition, cloud-based intelligence is used to analyze data after the trip is completed for deeper insights.",
+      "confidence": "high"
+    }
+  },
+  "What is the resolution of the driver facing camera in MioEYE?": {
+    "no-fleet": {
+      "ground_truth": "The driver-facing camera specifications for this model are:\n\n* **Resolution**: 2 MP, full HD - 1080p.\n* **Performance**: 30 fps with near-infrared sensitivity.\n* **Field of View**: 142 degrees with a 90-degree tiltable angle.\n* **Features**: Ability to sense illumination from the IR LED ring.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "The driver-facing camera for your hardware has a resolution of 1080p (2 MP, Full HD). It operates at 30 fps, has a 142-degree field of view, and is near-infrared sensitive to work with the built-in IR LED ring.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "The MioEYE driver-facing camera features a 1080p Full HD (2 MP) resolution. It includes near-infrared sensitivity, a 142-degree field of view, and a 90-degree tiltable angle while recording at 30 fps.",
+      "confidence": "high"
+    }
+  },
+  "What is the recommended mounting position of a dash cam in a vehicle?": {
+    "default": {
+      "ground_truth": "For optimal performance, follow these mounting recommendations:\n\n* **Placement**: Mount the camera as high on the windshield as possible. It must be windshield mounted and never placed on the dashboard.\n* **Positioning**: Mount the camera off-center toward the driver. For driver monitoring (DMS) to work, both eyes of the driver must be visible; mounting on the passenger side will severely compromise this.\n* **Visibility**: Ensure the camera does not obstruct the driver's direct line of sight to the road or traffic signs. Remove protective film from both lenses before use.\n* **Wiring**: Route wires around the windshield so they do not obstruct the driver's view.\n* **Alignment**: Align the road-facing camera so the horizon line is centered in the frame with minimal hood obstruction.",
+      "confidence": "high"
+    }
+  },
+  "How do I report an incorrect/false violation?": {
+    "default": {
+      "ground_truth": "You can report false detections by clicking the 'challenge' button within the portal. This functionality is available in portal configurations where the challenge feature has been enabled.",
+      "confidence": "high"
+    }
+  },
+  "What are the steps required to rebrand android Companion app?": {
+    "no-fleet": {
+      "ground_truth": "To rebrand the Android Companion app, follow these steps in your build environment:\n\n1. **Flavor Setup**: Define a new product flavor under the 'brand' dimension in the app-level `build.gradle` file.\n2. **Resources**: Create a directory named after your flavor and add all branded resources (launcher icon under `ic_launcher` in `mipmap`, company logo under `company_logo` in `drawable`) following standard Android structures.\n3. **Styling**: Update the `colors.xml` and `themes.xml` files in your flavor's resource folder to match your brand's color scheme.\n4. **SDK Credentials**: Set environment variables for the Maven access: `LM_COMPANION_MVN_ACCESS_KEY` and `LM_COMPANION_MVN_SECRET_KEY`.\n5. **API Base URL**: Modify the `LM_API_BASE_URL` in the `build.gradle` file.\n6. **Authentication**: Specify your configuration in the Amplify JSON file for Cognito authentication.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Rebranding the Android app involves the following technical steps:\n\n1. **SDK Integration**: You must use the Companion SDK. Set your credentials using environment variables `LM_COMPANION_MVN_ACCESS_KEY` and `LM_COMPANION_MVN_SECRET_KEY`.\n2. **Flavor Configuration**: Define a new product flavor in the `build.gradle` file and create a corresponding directory for your branded resources like logos and launcher icons.\n3. **UI Customization**: Update the `colors.xml` file in your product flavor directory to modify the application's color scheme.\n4. **Backend Setup**: Update the `LM_API_BASE_URL` in your configuration to point to the correct server APIs.\n\nMinimal structural work is required if you are already using the standard portal and driver pool setup.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "To rebrand the Android Companion app, you will need to perform the following:\n\n1. **Flavor Definition**: Create a new product flavor under the 'brand' dimension in your `build.gradle` file.\n2. **Directory & Assets**: Create a folder for your flavor and add standard Android resources, including a launcher icon (`ic_launcher`) and company logo (`company_logo`).\n3. **Colors**: List your branded color values in a `colors.xml` file within your flavor's resource directory.\n4. **Dependencies**: Ensure environment variables for the Companion SDK are set (`LM_COMPANION_MVN_ACCESS_KEY` and `SECRET_KEY`).\n5. **Authentication**: Update the Amplify configuration JSON for Cognito.",
+      "confidence": "high"
+    }
+  },
+  "What are the steps to enable Facial recognition?": {
+    "no-fleet": {
+      "ground_truth": "To enable facial recognition for drivers, follow these steps:\n\n1. **Enrollment**: Navigate to the Drivers tab in the portal and click 'Add Driver'. Enter the DriverID and upload 5 clear, well-lit, frontal JPG images of the driver's face with a plain background.\n2. **Provisioning**: Activate the Pro+/Advanced package and assign the asset to the fleet where the driver is enrolled.\n3. **Configuration**: Set the 'DriverID Source' to FaceID in the portal.\n\nThe system will then capture and compare faces for trips longer than 15 minutes.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Facial recognition can be enabled through these steps:\n\n1. **Driver Enrollment**: In the Drivers tab of your portal, add a driver and upload 5 clear JPG images of their face. Images should be well-lit, frontal, and have a plain background without accessories like sunglasses or caps.\n2. **Asset Setup**: Ensure the asset is provisioned to the fleet where the driver is enrolled.\n3. **Portal Setting**: In your portal configuration, set the DriverID Source to FaceID.\n\nNote that identification occurs only for trips that are longer than 15 minutes.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Follow these three steps to enable facial recognition:\n\n1. **Driver Images**: Go to the Drivers tab, select 'image upload' next to a driver, and upload 5 clear JPG face images. Ensure they are frontal, well-lit, and on a plain background.\n2. **Provisioning**: Assign the asset to the fleet with enrolled drivers.\n3. **System Configuration**: Set the DriverID Source to FaceID in the Fleet Portal.\n\nThe system automatically identifies drivers on trips exceeding 15 minutes.",
+      "confidence": "high"
+    }
+  },
+  "How does coaching effectiveness for a fleet work?": {
+    "no-fleet": {
+      "ground_truth": "Coaching effectiveness is managed through a data-driven program and detailed reporting:\n\n* **Reports**: The Coaching Effectiveness Report analyzes the difference in risky behavior before and after sessions.\n* **Metrics**: It tracks KPIs like session duration, percentage change in events per 100 miles, and identifies most improved drivers or those needing more coaching.\n* **Automated Selection**: The system can automatically mark safety events for coaching based on fleet configurations and severity, reducing human error.\n* **Dedicated Program**: Fleets can assign specific coaches to drivers to build trust and maintain consistent methodologies.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This functionality is not supported with your current configuration.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Coaching effectiveness allows you to measure and improve driver performance using these tools:\n\n* **Reports**: Access the Coaching Effectiveness Report to compare event counts before and after coaching sessions.\n* **Automated Workflow**: You can enable automated selection of safety events for coaching based on severity and your specific fleet configurations.\n* **Metrics**: The system tracks KPIs such as percentage change in incidents per 100 miles, session duration, and the most occurred vs. most improved events.\n* **Assignments**: Coaches can be manually or bulk-assigned to drivers to ensure standardized feedback and accountability.",
+      "confidence": "high"
+    }
+  },
+  "What is live telematics?": {
+    "default": {
+      "ground_truth": "Live telematics provide real-time \"Track and Trace\" capabilities for vehicle monitoring. The camera's GPS sensor sends location data to the backend every 30 seconds. Beyond location, device health and safety event messages are also available through this infrastructure. This feature must be explicitly enabled to access the live view.",
+      "confidence": "high"
+    }
+  },
+  "List of all Device-Tracking-events": {
+    "no-fleet": {
+      "ground_truth": "On older APK versions (1.14.x and below), tracking events included BootComplete, ShuttingDown, IgnitionON/OFF, and several sensor alerts. For versions 1.15.x and above, all health events are available, including:\n\n* **Trip Events**: TripStarted, TripEnded, DeviceSuspended.\n* **Status Alerts**: DiagnosticsReport, Reboot, RestartingApp, HotspotON.\n* **Storage & Connection**: SDCardStatus, SimState, NetworkConnected/Disconnected.\n* **Maintenance**: OTAStatusReport, CameraCalibration, CameraSensorReboot.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Your system supports the following device tracking events:\n\n* TripStarted and TripEnded.\n* IgnitionON and IgnitionOFF.\n* DeviceSuspended and Reboot.\n* DiagnosticsReport and RestartingApp.\n* HotspotON, TripTemporarilyDisabled, and SDCardStatus.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "The device tracking events available in your portal include:\n\n* **Trip Tracking**: TripStarted, TripEnded, and TripTemporarilyDisabled.\n* **Device Status**: Reboot, RestartingApp, BootComplete, and ShuttingDown.\n* **Hardware Health**: SDCardStatus, SimState, DiagnosticsReport, and BatteryStatus.\n* **Sensors**: IgnitionON/OFF, GPSSynced, CameraCalibration, and CameraSensorReboot.",
+      "confidence": "high"
+    }
+  },
+  "Details of using NFC Card on supported devices": {
+    "no-fleet": {
+      "ground_truth": "To use NFC cards for driver identification:\n\n* **Compatible Cards**: Must be in NDEF format and compliant with standards like ISO 14443-3A/3B, JIS 6319-4, or MIFARE Classic.\n* **Data Structure**: Records should follow a specific order: 1. Driver ID (alphanumeric with '-' or '_'), 2. Language Code (ISO-639-1), 3. Driver Name. The MIME type must be \"application/vnd.lm.smartcam.androidapp\".\n* **Setup**: Set 'driverIdSource' to 'NFC' in Asset Configuration.\n* **Verification**: After the camera boots (about 60 seconds), tap the card when the LED is blinking Green, Blue, or Cyan. If recognized, the camera can announce a \"NEW_DRIVER_ID\" audio notification.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "For hardware that supports NFC, follow these steps:\n\n* **Requirements**: Use cards compliant with ISO 14443 or MIFARE Classic standards, containing data in NDEF format.\n* **Card Writing**: Write the Driver ID as the first record and the language code as the second record.\n* **Portal Configuration**: Go to your Asset Configuration and set the 'Driver ID Source' to 'NFC'.\n* **Usage**: Once the camera has finished booting (indicated by blinking Green, Blue, or Cyan LEDs), tap your card to register your ID. If enabled, an audio alert will confirm the ID was read successfully.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "NFC cards can be used for driver identification with these details:\n\n* **Supported Types**: Standards like ISO 14443-3A/3B, JIS 6319-4, and MIFARE Classic are supported.\n* **NDEF Records**: The card must be written with the Driver ID as record 1 and language code as record 2.\n* **Registration**: Tap the card on the device after it has booted up (roughly 60 seconds after ignition).\n* **Configuration**: Set the 'driverIdSource' to 'NFC' in the Asset Configuration settings. Enable the 'NEW_DRIVER_ID' audio notification to receive confirmation when a card is successfully read.",
+      "confidence": "high"
+    }
+  },
+  "Configuration thresholds for harsh acceleration": {
+    "default": {
+      "ground_truth": "Thresholds for harsh acceleration are measured in miles-per-hour per second. Standard settings include:\n\n* **Low**: 4.5 mph/s (Most sensitive; triggers more events).\n* **Medium**: 6.0 mph/s.\n* **Severe**: 8.0 mph/s (Least sensitive; triggers fewer events).\n* **Custom**: Can be set to any value between 1.0 and 20.0.\n\nFor example, at a threshold of 4.5, the event triggers if velocity increases by 27 mph or more within 6 seconds.",
+      "confidence": "high"
+    }
+  },
+  "What configurations threshold do I set to get more number of harsh accelerations?": {
+    "default": {
+      "ground_truth": "To increase the number of detected harsh acceleration events, you should set the threshold to a lower value. The **Low** setting, which uses a threshold of **4.5 miles-per-hour-per-second**, is the most sensitive and will generate the highest number of events.",
+      "confidence": "high"
+    }
+  },
+  "What is FCW?": {
+    "default": {
+      "ground_truth": "FCW stands for Forward-Collision-Warning. It is triggered when the Time-to-Collision (TTC) with the vehicle in front drops below a specified threshold. It serves as a warning that the driver is at risk of rear-ending the vehicle ahead if they maintain their current speed. Unlike Tailgating, which measures following distance over a set duration, FCW triggers immediately when the TTC threshold is breached.",
+      "confidence": "high"
+    }
+  },
+  "What are recommend settings/ configurations for events and violations ?": {
+    "no-fleet": {
+      "ground_truth": "Recommended configurations to optimize detection and minimize false alerts:\n\n* **Speed Limits**: Enable voice notifications for violations only, and set video uploads only for severe speeding.\n* **Stop Signs**: Set the speed threshold at 10 mph to avoid false violations caused by GPS lag. Disable voice alerts for detections.\n* **Lane Drift**: Set a minimum speed of 40 mph and consider muting notifications to reduce alert fatigue.\n* **Harsh Driving**: During testing, set thresholds for acceleration, braking, and cornering to 6 (instead of 4.5) to generate events more easily.\n* **Distraction**: Use a default sensitivity of 55, avoiding values higher than 60.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Recommended settings to start with for your fleet:\n\n* **Speeding**: Disable voice alerts for sign detections and only enable them for actual violations. Only upload videos for severe speeding events to save data.\n* **Stop Signs**: Set the speed threshold to 10 mph (as 5 mph can be too strict due to GPS lag).\n* **Harsh Driving**: For testing, use a threshold of 6 for acceleration, braking, and cornering.\n* **Lane Drift**: Set the minimum trigger speed to 40 mph.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "To effectively track behavior while minimizing false alerts, consider these settings:\n\n* **Sign Compliance**: For stop signs, use a 10 mph threshold to account for GPS lag. For speed limits, only use voice notifications for violations.\n* **Lane Safety**: Set a minimum speed of 40 mph for lane drift events. Disable lane departure alerts if turn signal data is unavailable.\n* **Behavioral sensitivity**: Set distraction sensitivity to 55. Set harsh driving events to 6 for testing purposes.\n* **Low Light**: Turn on 'Long Exposure Mode' to improve image clarity for human review in night conditions.",
+      "confidence": "high"
+    }
+  },
+  "How do i generate more FCW events ?": {
+    "default": {
+      "ground_truth": "To generate more Forward-Collision-Warning (FCW) events, you can increase the **Time-To-Collision (TTC) threshold** in your configuration. A higher threshold (up to 3 seconds) makes the system more sensitive, triggering warnings even when the driver is further away from the vehicle in front.",
+      "confidence": "high"
+    }
+  },
+  "How do I login into the dashboard ?": {
+    "default": {
+      "ground_truth": "If Single Sign-On (SSO) is implemented, you should log in through your service provider's portal. Otherwise, use your fleet manager email to log in and follow the authentication link sent to that email. Once authenticated, you can reset your password using the link provided in the email.",
+      "confidence": "high"
+    }
+  },
+  "How do I know if all data from a trip is uploaded ?": {
+    "default": {
+      "ground_truth": "Check the icon to the left of the trip entry in your list:\n\n* **Green**: The trip is finished and all data has been successfully uploaded.\n* **Yellow**: Data upload is still pending.\n* **Blinking Yellow**: The trip is currently ongoing.",
+      "confidence": "high"
+    }
+  },
+  "How many hours of driving data can be stored?": {
+    "default": {
+      "ground_truth": "Storage capacity depends on the SD card size and video settings. For a road-facing camera at 720p and 10 fps:\n\n* **64GB**: ~55 hours.\n* **128GB**: ~111 hours.\n* **256GB**: ~222 hours.\n\nIf both road and driver cameras are recording at 720p and 10 fps, storage is roughly halved (e.g., ~55 hours on a 128GB card). Note that actual usable space is usually about 93% of the card's advertised capacity.",
+      "confidence": "high"
+    }
+  },
+  "What's the latest APK version available for the cameras?": {
+    "no-fleet": {
+      "ground_truth": "The latest available version is APK v1.22.7 (released Dec 06, 2025), which includes fixes for power cut rate limiting and ensures device time does not reset after power loss.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Your current configuration is running APK version v1.20.4.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Your current configuration is running APK version v1.22.5.",
+      "confidence": "high"
+    }
+  },
+  "How can I download event videos from the fleet portal?": {
+    "no-fleet": {
+      "ground_truth": "You can download event videos directly from the portal:\n\n1. **Permissions**: Ensure you have the 'Download Video' permission enabled.\n2. **Download**: On any event page that has a video (safety events, panic buttons, etc.), click the download button to save the file.\n3. **Requesting**: If a higher-quality version is needed, locate the violation under 'Event on demand' and use the 'Request DVR' option.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "In the browser, where you are viewing the video, please right click on the video and click on the “Save the Video” option to download the event video.",
+      "confidence": "medium"
+    },
+    "non-shield": {
+      "ground_truth": "You can download event videos directly from the portal:\n\n1. **Permissions**: Ensure you have the 'Download Video' permission enabled.\n2. **Download**: On any event page that has a video (safety events, panic buttons, etc.), click the download button to save the file.\n3. **Requesting**: If a higher-quality version is needed, locate the violation under 'Event on demand' and use the 'Request DVR' option.",
+      "confidence": "high"
+    }
+  },
+  "How many minutes of live streaming is allowed for an asset?": {
+    "no-fleet": {
+      "ground_truth": "By default, assets are provisioned with 100 minutes of live streaming per month. This can be extended up to a maximum of 900 minutes per month through the master portal.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "In your current configuration, each asset is allowed 15 minutes of live streaming per vehicle per month by default.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Your current setup allows for 100 minutes of live streaming per vehicle each month.",
+      "confidence": "high"
+    }
+  },
+  "Can the system detect traffic light violations?": {
+    "no-fleet": {
+      "ground_truth": "Yes, the system detects traffic light violations for straight-moving traffic. It identifies if a driver jumped a red light signal at a junction. This feature is available in the US and Canada (as of APK 1.22).",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This functionality is not supported with your current configuration.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, the system can detect when a driver jumps a red light signal at a traffic junction. This provides visibility into non-compliance to help reduce accident risks. This feature is supported in the US and Canada regions.",
+      "confidence": "high"
+    }
+  },
+  "Can license plates of other vehicles be blurred?": {
+    "no-fleet": {
+      "ground_truth": "Yes, automatic blurring of license plates is supported. In APK versions 1.22.x and higher, you can enable the `blurPII` key in the asset configuration to blur pedestrians and license plates in road-facing videos. For version 1.21, the key used was `blurVehicleROI`.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This functionality is not supported with your current configuration.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, license plates of other vehicles can be blurred. For your system version, the `blurPII` configuration key can be enabled to blur pedestrians and license plates in road-facing videos at the time of recording.",
+      "confidence": "high"
+    }
+  },
+  "Can the system detect speed cameras and alert the driver?": {
+    "no-fleet": {
+      "ground_truth": "Yes, starting with APK version 1.22.x, the system can detect fixed speed cameras in the US and Canada using a pre-defined GPS database. Drivers receive an audio alert 200 meters before approaching the camera location.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This functionality is not supported with your current configuration.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, your system can detect speed cameras and provide alerts. The device will announce an audio alert 200 meters prior to approaching a fixed safety camera location (US and Canada).",
+      "confidence": "high"
+    }
+  },
+  "Does the fleet portal support the Japanese language?": {
+    "no-fleet": {
+      "ground_truth": "Yes, Japanese language support was added to the portal in version 10.6.0 (released August 2025).",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This option isn't available in your current setup.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, your portal supports the Japanese language, which was added as a new language option.",
+      "confidence": "high"
+    }
+  },
+  "Can multiple user roles be created?": {
+    "no-fleet": {
+      "ground_truth": "Yes, the portal supports custom User Roles and Hierarchy. Administrators can create roles like Safety Coach or Fleet Manager and define specific UI configurations and general permissions for each role.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "Your current setup supports two default user roles: Administrator and Fleet Manager. The option to create additional custom roles isn't available in your current setup.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, you can manage user access by creating custom roles. This is done by navigating to the Users Page, clicking the Roles tab, and using 'Add New Role' to define specific UI and feature permissions.",
+      "confidence": "high"
+    }
+  },
+  "Can I create custom events?": {
+    "no-fleet": {
+      "ground_truth": "Yes, you can register custom events that serve as triggers for capturing video footage. These events are mapped to relevant trips in the system to retrieve corresponding footage.",
+      "confidence": "high"
+    },
+    "shield": {
+      "ground_truth": "This functionality is not supported with your current configuration.",
+      "confidence": "high"
+    },
+    "non-shield": {
+      "ground_truth": "Yes, you can register custom events to serve as triggers for capturing video footage related to specific activities. These events are then associated with the relevant trips in the portal.",
+      "confidence": "high"
+    }
+  }
+}

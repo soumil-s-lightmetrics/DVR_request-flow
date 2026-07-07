@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Video Request — DVR Assistant</title>
+<link rel="icon" type="image/png" href="/static/images/title_bar.jpg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#802872;--purple-light:#9d378d;--purple-dim:rgba(128,40,114,0.06);--purple-border:rgba(128,40,114,0.3);
+  --amber:#f59e0b;--green:#10b981;--red:#ef4444;
+  /* FIGMA: Main text / Subtitle text tokens */
+  --text:#212121;--text-sec:#3f3f3d;--text-tri:#706d6b;
+  /* FIGMA: Border colour + Background colour tokens (used for cards, inputs, buttons) */
+  --border:#d2d1d0;--border-lt:#e6e5e3;--white:#fff;--surface:#f9fafb;
+  /* FIGMA: canvas panel background */
+  --canvas-bg:#d7ecec;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 10px 25px -5px rgba(0,0,0,0.1);
+  --radius:12px;--radius-sm:8px;
+}
+.material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;font-size:18px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;vertical-align:middle;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20}
+html,body{height:100%;font-family:'Inter',sans-serif;font-size:14px;color:var(--text);-webkit-font-smoothing:antialiased;background:var(--canvas-bg)}
+
+.topbar{display:flex;align-items:center;height:56px;padding:0 20px;background:var(--white);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text)}
+.beta{font-size:10px;font-weight:600;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;letter-spacing:.04em}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.fleet-input{background:var(--surface);border:1px solid var(--border);font-family:inherit;font-size:12px;padding:6px 12px;border-radius:6px;width:180px;outline:none}
+.fleet-input:focus{border-color:var(--purple)}
+.tb-btn{font-family:inherit;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;transition:all .15s}
+.tb-btn-p{background:var(--purple);color:#fff}.tb-btn-p:hover{background:var(--purple-light)}.tb-btn-p:disabled{opacity:.4;cursor:not-allowed}
+.tb-btn-g{background:var(--white);color:var(--text-sec);border:1px solid var(--border)}.tb-btn-g:hover{border-color:var(--purple);color:var(--purple)}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-tri)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--border)}.status-dot.live{background:var(--green);box-shadow:0 0 5px var(--green)}
+
+.shell{display:flex;flex-direction:column;height:100vh}
+.main{display:flex;flex:1;overflow:hidden}
+.chat-panel{width:38%;min-width:320px;display:flex;flex-direction:column;background:var(--white);border-right:1px solid var(--border);overflow:hidden}
+.canvas-panel{flex:1;display:flex;flex-direction:column;background:var(--canvas-bg);overflow:hidden}
+
+.landing{flex:1;display:flex;flex-direction:column;align-items:center;padding:60px 20px 20px;overflow-y:auto}
+.landing-title{font-size:22px;font-weight:500;color:var(--text);margin-bottom:24px;text-align:center}
+.search-pill-wrap{width:100%;max-width:420px;position:relative;margin-bottom:16px}
+
+/* FIX 1: chips now render in their own row, stacked above the input row, inside one bordered container */
+.search-pill{display:flex;flex-direction:column;background:var(--white);border:2px solid var(--border);border-radius:22px;padding:10px 14px;gap:8px;transition:border-color .15s}
+.search-pill:focus-within{border-color:var(--purple)}
+.pill-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%}
+.pill-tags:empty{display:none}
+.pill-input-row{display:flex;align-items:center;gap:10px;width:100%}
+#main-input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);min-width:60px}
+#main-input::placeholder{color:var(--text-tri)}
+.send-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:var(--purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .15s}
+.send-btn:hover{background:var(--purple-light)}
+.send-btn svg{width:14px;height:14px}
+
+.filter-panel{width:100%;max-width:420px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;display:none;margin-top:6px}
+.filter-panel.open{display:block}
+.filter-panel-head{padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-sec);border-bottom:1px solid var(--border-lt);display:flex;align-items:center;justify-content:space-between;background:var(--border-lt);text-transform:uppercase;letter-spacing:.04em}
+.filter-panel-head .back-btn{background:none;border:none;cursor:pointer;color:var(--purple);font-size:10px;font-family:inherit;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.filter-item-scroll{max-height:240px;overflow-y:auto}
+.filter-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border-lt);cursor:pointer;transition:background .1s;gap:10px}
+.filter-row:last-child{border-bottom:none}
+.filter-row:hover{background:var(--border-lt)}
+.filter-row.focused{background:var(--purple-dim)}
+.filter-icon{width:28px;height:28px;border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:var(--text-sec)}
+.filter-info{flex:1}.filter-name{font-size:13px;font-weight:500;color:var(--text)}.filter-name strong{color:var(--purple);font-weight:600}
+.filter-sub{font-size:11px;color:var(--text-tri);margin-top:1px}
+.filter-chevron{color:var(--text-tri);font-size:13px;opacity:.6}
+.ac-group-header{padding:5px 14px;background:rgba(128,40,114,0.03);font-size:10px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-lt)}
+.ac-group-header .group-action-hint{font-size:9px;text-transform:lowercase;font-weight:400;color:var(--text-tri)}
+.no-data{padding:20px;text-align:center;font-size:12px;color:var(--text-tri)}
+
+.quick-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:420px;margin-top:4px}
+.quick-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:10px}
+.quick-card:hover{border-color:var(--purple);box-shadow:var(--shadow-sm)}
+.qc-icon{width:30px;height:30px;border-radius:6px;background:var(--purple-dim);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.qc-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.qc-sub{font-size:11px;color:var(--text-tri);line-height:1.4}
+
+.messages-area{flex:1;overflow-y:auto;padding:20px 0;display:none;flex-direction:column;gap:0}
+.messages-area.active{display:flex}
+.messages-area::-webkit-scrollbar{width:4px}.messages-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.msg{padding:10px 20px;display:flex;gap:12px}
+.msg-avatar{width:28px;height:28px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:2px}
+.msg.user .msg-avatar{background:var(--purple);color:#fff}
+.msg.assistant .msg-avatar{background:var(--surface);border:1px solid var(--border);color:var(--text-sec);font-size:15px}
+.msg-body{flex:1}
+.msg-role{font-size:11px;font-weight:600;color:var(--text-tri);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.msg.user .msg-role{color:var(--purple)}
+.msg-text{font-size:13px;line-height:1.5;color:var(--text-sec)}.msg.user .msg-text{color:var(--text);font-weight:500}
+.gen-response{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text-sec);white-space:pre-wrap;margin-top:4px}
+/* FIGMA: user turns render as a right-aligned chat bubble, avatar on the right */
+.msg.user{flex-direction:row-reverse;justify-content:flex-start}
+.msg.user .msg-body{flex:0 1 auto;max-width:78%;margin-left:auto;text-align:right}
+.msg.user .msg-role{text-align:right}
+.msg.user .msg-text{display:inline-block;text-align:left;background:var(--purple);color:#fff;padding:9px 14px;border-radius:14px 14px 3px 14px;font-weight:500}
+.typing{display:flex;gap:4px;align-items:center;padding:6px 0}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--text-tri);animation:blink 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+.action-chips{display:flex;gap:8px;padding:8px 20px;flex-wrap:wrap}
+.action-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--purple);color:var(--purple);font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .15s;font-family:inherit;background:var(--white)}
+.action-chip:hover{background:var(--purple-dim)}
+/* the "which format?" prompt right after picking a trip needs to stand out from
+   the earlier, generic chips — bigger, filled, with a little shadow */
+.action-chips-lg{padding:10px 20px 16px}
+.action-chips-lg .action-chip{font-size:14px;font-weight:600;padding:12px 22px;border-radius:24px;border-width:2px;box-shadow:var(--shadow-sm)}
+.action-chips-lg .action-chip:hover{background:var(--purple);color:#fff}
+
+.interrupt-wrap{padding:8px 20px}
+.interrupt-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+.interrupt-card-head{padding:12px 14px;border-bottom:1px solid var(--border-lt);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text)}
+.ic-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.interrupt-card-body{padding:14px}
+.ts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.ts-label{font-size:10px;font-weight:600;color:var(--text-tri);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.ts-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:12px;padding:8px 10px;border-radius:6px;outline:none;color-scheme:light}
+.ts-input:focus{border-color:var(--purple)}
+.btn-row{display:flex;gap:6px}
+.btn{font-family:inherit;font-size:12px;font-weight:500;padding:7px 16px;border-radius:6px;border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.btn:hover{opacity:.9}.btn-purple{background:var(--purple);color:#fff}.btn-green{background:var(--green);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--text-sec);border:1px solid var(--border)}.btn:disabled{opacity:.4;cursor:not-allowed}
+
+.dvr-params{background:var(--surface);border-radius:8px;border:1px solid var(--border);padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px}
+.dvr-param-row{display:flex;gap:10px;font-size:12px}
+.dvr-param-key{color:var(--text-tri);width:90px;flex-shrink:0;font-weight:500;text-transform:capitalize}
+.dvr-param-val{color:var(--text);font-weight:600;word-break:break-all}
+
+/* FIX 4: clip start / clip end shown as their own distinct, dynamic block */
+.clip-window{display:flex;gap:10px;margin-bottom:12px}
+.clip-box{flex:1;background:var(--white);border:1px solid var(--purple-border);border-radius:8px;padding:10px 12px}
+.clip-box .ts-label{margin-bottom:4px;color:var(--purple)}
+.clip-box .clip-val{font-size:12px;font-weight:600;color:var(--text)}
+
+.result-banner{margin:8px 20px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:var(--radius-sm);padding:12px 14px}
+.result-banner-label{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.result-banner-id{font-size:13px;color:var(--text);font-weight:500;word-break:break-all}
+.result-banner .dvr-params{background:var(--white);border-color:#6ee7b7;margin-top:8px;margin-bottom:0}
+
+.chat-input-bar{border-top:1px solid var(--border-lt);padding:12px 16px;background:var(--white);display:none}
+.chat-input-bar.active{display:block}
+
+/* FIX 3: explicit banner confirming which trip is staged for the DVR request */
+.selected-trip-banner{display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--purple-dim);border:1px solid var(--purple-border);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--purple)}
+.selected-trip-banner strong{color:var(--purple)}
+.stb-clear{background:none;border:none;color:var(--purple);cursor:pointer;font-size:12px;font-weight:600;flex-shrink:0}
+.stb-clear:hover{text-decoration:underline}
+
+.chat-pill-wrap{position:relative}
+.chat-ac-dropdown{position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;display:none;z-index:20}
+.chat-ac-dropdown.open{display:block}
+/* FIX 1: chips now render in their own row, stacked above the input row, inside one bordered container */
+.chat-pill{display:flex;flex-direction:column;background:var(--white);border:2px solid var(--border);border-radius:22px;padding:8px 8px 8px 14px;gap:8px;transition:border-color .15s}
+.chat-pill:focus-within{border-color:var(--purple)}
+.chat-pill .pill-input-row{padding-right:2px}
+#chat-input{flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);resize:none;min-height:20px;max-height:100px;line-height:1.4;padding-top:3px}
+#chat-input::placeholder{color:var(--text-tri)}
+.chat-send-btn{width:32px;height:32px;border-radius:50%;flex-shrink:0;background:var(--purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff}
+.chat-send-btn svg{width:12px;height:12px}
+.chat-disclaimer{font-size:10px;color:var(--text-tri);text-align:center;margin-top:6px}
+.selected-tag{display:inline-flex;align-items:center;gap:3px;background:var(--purple-dim);border:1px solid var(--purple-border);color:var(--purple);font-size:11px;font-weight:500;padding:2px 7px 2px 9px;border-radius:14px;white-space:nowrap;flex-shrink:0}
+.selected-tag-remove{background:none;border:none;cursor:pointer;color:var(--purple);font-size:13px;line-height:1;padding:0 1px;opacity:.7}
+.selected-tag-remove:hover{opacity:1}
+
+.canvas-header{padding:14px 20px;border-bottom:1px solid #b8d8e3;background:#e4f1f5;font-size:13px;color:var(--text-sec);display:flex;align-items:center;justify-content:space-between}
+.canvas-header-title{font-weight:500;color:var(--text)}
+.canvas-count{font-size:12px;color:var(--text-tri)}
+.canvas-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-tri);font-size:13px;gap:8px}
+.canvas-empty-icon{font-size:40px;opacity:.3}
+.trip-table{flex:1;overflow-y:auto;padding:0;background:var(--surface)}
+.trip-table::-webkit-scrollbar{width:4px}.trip-table::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.tt-head{display:flex;padding:10px 20px;background:#cde5ec;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-sec);text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;z-index:2}
+.tt-row{display:flex;padding:12px 20px;border-bottom:1px solid #c8dfe7;align-items:flex-start;transition:background .1s;background:var(--white)}
+.tt-row:hover{background:#f0f7fa}
+.tt-row.expired-row{opacity:.75}
+/* FIX 3: selected row gets a clearly labeled left border + tint, not just a plain highlight */
+.tt-row.tt-row-selected{background:var(--purple-dim);box-shadow:inset 3px 0 0 var(--purple)}
+.tt-col{overflow:hidden;text-overflow:ellipsis}
+.col-asset{width:18%;flex-shrink:0}.col-driver{width:12%;flex-shrink:0}.col-start{width:14%;flex-shrink:0}
+.col-pinged{width:13%;flex-shrink:0}.col-events{width:18%;flex-shrink:0}.col-dvr{width:13%;flex-shrink:0}.col-action{width:12%;flex-shrink:0;text-align:right}
+.tt-asset{font-size:13px;font-weight:500;color:var(--text)}.tt-trip{font-size:10px;color:var(--text-tri);margin-top:1px}
+.tt-cell{font-size:12px;color:var(--text);white-space:nowrap}
+.pinged-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap;display:inline-block}
+.badge-available{background:#ecfdf5;color:#065f46}.badge-expiring{background:#fef3c7;color:#92400e}.badge-expired{background:#f3f4f6;color:#6b7280}
+.evt-toggle{font-size:11px;color:var(--purple);cursor:pointer;font-weight:500;user-select:none}
+.evt-list{margin-top:4px;display:none}
+.evt-list.open{display:block}
+.evt-badge{font-size:10px;padding:2px 6px;border-radius:3px;margin:1px 2px 1px 0;display:inline-block;background:#fbeaf0;color:#993556}
+.req-btn{font-family:inherit;font-size:11px;font-weight:500;padding:5px 12px;border-radius:5px;border:none;cursor:pointer;background:var(--purple);color:#fff;white-space:nowrap;transition:background .15s}
+.req-btn:hover{background:var(--purple-light)}
+.req-btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed}
+/* FIX 3: distinct visual state once a trip is actually staged for the request */
+.req-btn.req-btn-selected{background:var(--green)}
+.req-btn.req-btn-selected:hover{background:var(--green)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <img src="/images/logo.jpg" alt="Logo" style="height:32px;border-radius:6px;"/>
+    <span class="topbar-title">Video Request</span>
+    <span class="beta">BETA</span>
+    <div class="topbar-right">
+      <input class="fleet-input" id="fleet-id-input" placeholder="Fleet ID…"/>
+      <button class="tb-btn tb-btn-p" id="load-btn" onclick="loadFleetData()">Load fleet</button>
+      <div class="status-pill"><div class="status-dot" id="status-dot"></div><span id="status-label">Connecting…</span></div>
+      <button class="tb-btn tb-btn-g" onclick="newThread()">+ New chat</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="chat-panel">
+      <div class="landing" id="landing">
+        <div class="landing-title">What footage do you need?</div>
+        <div class="search-pill-wrap">
+          <!-- FIX 1: chips row sits above the input row, both inside one bordered container -->
+          <div class="search-pill">
+            <div class="pill-tags" id="landing-pill-tags"></div>
+            <div class="pill-input-row">
+              <input id="main-input" type="text" placeholder="Ask anything or type @ to filter…" oninput="onLandingInput(event)" onkeydown="onLandingKeydown(event)"/>
+              <button class="send-btn" onclick="landingSend()"><svg viewBox="0 0 24 24" fill="white"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg></button>
+            </div>
+          </div>
+          <div class="filter-panel" id="landing-filter-panel"><div id="landing-item-list"></div></div>
+        </div>
+        <div class="quick-cards">
+          <div class="quick-card" onclick="setQ('Show last trip for driver ')"><div class="qc-icon"><span class="material-symbols-outlined">person</span></div><div><div class="qc-title">Driver lookup</div><div class="qc-sub">Last trip, incident history</div></div></div>
+          <div class="quick-card" onclick="setQ('Get DVR footage for trip ')"><div class="qc-icon"><span class="material-symbols-outlined">videocam</span></div><div><div class="qc-title">Trip footage</div><div class="qc-sub">Clips, timelapse, departure</div></div></div>
+          <div class="quick-card" onclick="setQ('Show all harsh brake events ')"><div class="qc-icon"><span class="material-symbols-outlined">warning</span></div><div><div class="qc-title">Event review</div><div class="qc-sub">Violations, risk events</div></div></div>
+          <div class="quick-card" onclick="setQ('Get whole trip video for asset ')"><div class="qc-icon"><span class="material-symbols-outlined">local_shipping</span></div><div><div class="qc-title">Asset footage</div><div class="qc-sub">Full trip video by vehicle</div></div></div>
+        </div>
+      </div>
+
+      <div class="messages-area" id="messages-area"></div>
+
+      <div class="chat-input-bar" id="chat-input-bar">
+        <!-- FIX 3: explicit "this trip is staged for the request" banner -->
+        <div class="selected-trip-banner" id="selected-trip-banner"></div>
+        <div class="chat-pill-wrap">
+          <div class="chat-ac-dropdown" id="chat-ac-dropdown"><div id="chat-ac-list"></div></div>
+          <!-- FIX 1: chips row sits above the input row, both inside one bordered container -->
+          <div class="chat-pill">
+            <div class="pill-tags" id="chat-pill-tags"></div>
+            <div class="pill-input-row">
+              <textarea id="chat-input" rows="1" placeholder="Ask anything or type @ to filter…" oninput="onChatInput(event)" onkeydown="onChatKeydown(event)"></textarea>
+              <button class="chat-send-btn" onclick="chatSend()"><svg viewBox="0 0 24 24" fill="white"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="chat-disclaimer">AI may make mistakes — verify trip details before submitting a video request</div>
+      </div>
+    </div>
+
+    <div class="canvas-panel" id="canvas-panel">
+      <div class="canvas-header" id="canvas-header" style="display:none">
+        <span class="canvas-header-title" id="canvas-title">Trip results</span>
+        <span class="canvas-count" id="canvas-count"></span>
+      </div>
+      <div class="canvas-empty" id="canvas-empty">
+        <div class="canvas-empty-icon"><span class="material-symbols-outlined" style="font-size:40px">videocam</span></div>
+        <div>No trips found</div>
+        <div style="font-size:11px">Search to see matching trips here</div>
+      </div>
+      <div class="trip-table" id="trip-table" style="display:none">
+        <div class="tt-head">
+          <span class="tt-col col-asset">Asset / trip</span>
+          <span class="tt-col col-driver">Driver</span>
+          <span class="tt-col col-start">Start time</span>
+          <span class="tt-col col-pinged">Last pinged</span>
+          <span class="tt-col col-events">Safety events</span>
+          <span class="tt-col col-dvr">DVR until</span>
+          <span class="tt-col col-action">Action</span>
+        </div>
+        <div id="tt-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let ws = null;
+let wsReady = false;
+let wsQueue = [];  // messages queued before connection is open
+let reconnectDelay = 1000;
+let fleetData = {drivers:[],asset_ids:[],trip_ids:[],events:[],fleet_id:null};
+let threads = {}, activeThreadId = null, currentTrips = [];
+let currentAcState = {activeInputId:null,panelElementId:null,resultsElementId:null,selectedCategory:null,lastAtIdx:-1,focusIdx:-1,collectedItems:[]};
+let textBeforeAt = '', isInjectingCategoryToken = false;
+let pendingDvrType = null;
+let graphPaused = false;
+// FIX 4/5: remember the full param set behind the current confirm-DVR card, and the
+// finalized request details, so the success banner can show everything the user picked.
+let currentConfirmParams = null;
+let lastDvrRequestDetails = null;
+
+// ── Plain WebSocket connection (replaces Socket.IO) ────────────────────────
+function getWsUrl() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${location.host}/chat`;
+}
+
+function connectSocket() {
+  ws = new WebSocket(getWsUrl());
+
+  ws.onopen = () => {
+    wsReady = true;
+    reconnectDelay = 1000;
+    document.getElementById('status-dot').classList.add('live');
+    document.getElementById('status-label').textContent = 'Connected';
+    // Flush any messages that were queued while disconnected
+    wsQueue.forEach(msg => ws.send(JSON.stringify(msg)));
+    wsQueue = [];
+  };
+
+  ws.onclose = () => {
+    wsReady = false;
+    document.getElementById('status-dot').classList.remove('live');
+    document.getElementById('status-label').textContent = 'Reconnecting…';
+    // Auto-reconnect with exponential backoff (max 10s)
+    setTimeout(connectSocket, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+  };
+
+  ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+    ws.close();
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      handleServerMessage(msg);
+    } catch(e) {
+      console.error('Failed to parse server message:', e);
+    }
+  };
+}
+
+// Send helper — queues if socket not ready yet
+function wsSend(payload) {
+  if (ws && wsReady) {
+    ws.send(JSON.stringify(payload));
+  } else {
+    wsQueue.push(payload);
+  }
+}
+
+// Start connection on page load
+connectSocket();
+
+// ── Fleet data loader ──────────────────────────────────────────────────────
+async function loadFleetData() {
+  const fid = document.getElementById('fleet-id-input').value.trim();
+  if (!fid) return;
+  const btn = document.getElementById('load-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  try {
+    const res = await fetch(`/${fid}/load-data`);
+    if (!res.ok) throw new Error('Bad response');
+    const d = await res.json();
+    fleetData = {
+      drivers: d.drivers || [],
+      asset_ids: d.asset_ids || [],
+      trip_ids: d.trip_ids || [],
+      events: d.events || [],
+      fleet_id: fid
+    };
+    wsSend({type:'load_data', fleet_data:{...fleetData, fleet_id:fid}, thread_id:activeThreadId});
+    btn.textContent = 'Loaded';
+    setTimeout(() => { btn.textContent = 'Load fleet'; btn.disabled = false; }, 2000);
+  } catch(e) {
+    console.error('Fleet load error:', e);
+    btn.textContent = 'Error';
+    btn.disabled = false;
+    setTimeout(() => btn.textContent = 'Load fleet', 2000);
+  }
+}
+
+// ── Message handler (unchanged logic, just source changed) ─────────────────
+function handleServerMessage(msg) {
+  removeTyping();
+
+  if (msg.type === 'load_complete') return;
+
+  if (msg.type === 'error') {
+    appendBot('Error: ' + (msg.message || 'Something went wrong.'));
+    return;
+  }
+
+  if (msg.type === 'interrupt') {
+    const p = msg.payload;
+    if (p.message === 'please provide timestamp') { renderTimestampInterrupt(); return; }
+    if (p.message === 'show_results') {
+      graphPaused = true;
+      if (p.first) {
+        if (p.filters) applyBackendFilterChips(p.filters);
+        renderTripResults(p.trips, p.summary);
+      }
+      return;
+    }
+    if (p.message === 'confirm_dvr') { renderConfirmDvr(p); return; }
+    return;
+  }
+
+  if (msg.type === 'chat_response') {
+    if (msg.more === false) graphPaused = false;
+    const r = msg.response;
+    if (r.uploadRequestId) { renderSuccess(r.uploadRequestId, r.dvr_summary); }
+    else if (r.chat_response) { appendBot(r.chat_response); storeMsg('assistant', r.chat_response); }
+    return;
+  }
+}
+
+// ── Autocomplete ───────────────────────────────────────────────────────────
+function friendlyTripLabel(t){return `${t.driverName||'Trip'} · ${t.assetId||''}`.trim()}
+function getTripPickerSource(){
+  if(currentTrips.length>0) return currentTrips.map(t=>({label:friendlyTripLabel(t),
+  sub:t.startTimeUTC?new Date(t.startTimeUTC).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}):'',raw:t.tripId}));
+  return fleetData.trip_ids.map(t=>({label:String(t),sub:'',raw:t}));
+}
+
+function evaluateAutocompleteTrigger(iid,pid,rid){if(isInjectingCategoryToken)return;const input=document.getElementById(iid);const val=input.value;
+currentAcState.activeInputId=iid;currentAcState.panelElementId=pid;currentAcState.resultsElementId=rid;
+if(currentAcState.selectedCategory){const ai=val.lastIndexOf('@');const q=ai!==-1?val.slice(ai+1):val;executeLocalSearchFilter(currentAcState.selectedCategory,q.trim());openAcPanel();return}
+const ai=val.lastIndexOf('@');if(ai===-1){closeAc();return}textBeforeAt=val.slice(0,ai);currentAcState.lastAtIdx=ai;
+const after=val.slice(ai+1);if(!after){renderCatDropdown();openAcPanel();return}
+const ns=after.toLowerCase();let ec=null;
+if(ns.startsWith('drivers ')){ec='Drivers'}else if(ns.startsWith('assets ')){ec='Assets'}else if(ns.startsWith('trips ')){ec='Trips'}else if(ns.startsWith('event types ')||ns.startsWith('events ')){ec='Event Types'}
+if(ec){injectCatToken(ec)}else{execGlobalSearch(after.trim())}openAcPanel()}
+
+function execGlobalSearch(sq){const c=document.getElementById(currentAcState.resultsElementId);if(!c)return;
+const ql=sq.toLowerCase();const mg={'Drivers':[],'Assets':[],'Trips':[],'Event Types':[]};let mc=0;
+fleetData.drivers.forEach(d=>{if((d.driverName||'').toLowerCase().includes(ql)||(d.driverId||'').toLowerCase().includes(ql)){mg['Drivers'].push({label:d.driverName,sub:d.driverId,raw:d});mc++}});
+fleetData.asset_ids.forEach(a=>{if(String(a).toLowerCase().includes(ql)){mg['Assets'].push({label:String(a),sub:'',raw:a});mc++}});
+getTripPickerSource().forEach(t=>{if(t.label.toLowerCase().includes(ql)){mg['Trips'].push(t);mc++}});
+fleetData.events.forEach(e=>{if(String(e).toLowerCase().includes(ql)){mg['Event Types'].push({label:String(e),sub:'',raw:e});mc++}});
+currentAcState.focusIdx=-1;if(mc===0){c.innerHTML='<div class="no-data">No matches</div>';return}
+const gi={'Drivers':'person','Assets':'local_shipping','Trips':'route','Event Types':'warning'};let h=`<div class="filter-panel-head">Results for "${esc(sq)}"</div><div class="filter-item-scroll">`;let si=[];
+Object.keys(mg).forEach(cat=>{const col=mg[cat];if(col.length>0){h+=`<div class="ac-group-header" onclick="injectCatToken('${cat}')"><span>${cat}</span><span class="group-action-hint">click to filter</span></div>`;
+col.forEach(item=>{const gid=si.length;si.push({category:cat,rawData:item.raw,displayLabel:item.label});
+h+=`<div class="filter-row chat-ac-item" data-idx="${gid}" onclick="stageGlobal(${gid})"><div class="filter-icon">${micon(gi[cat])}</div><div class="filter-info"><div class="filter-name">${hl(item.label,sq)}</div>${item.sub?`<div class="filter-sub">${hl(item.sub,sq)}</div>`:''}</div></div>`})}});
+h+='</div>';c.innerHTML=h;c._gdi=si}
+
+function executeLocalSearchFilter(cat,sq){const c=document.getElementById(currentAcState.resultsElementId);if(!c)return;const ql=sq.toLowerCase();let m=[];
+if(cat==='Drivers')fleetData.drivers.forEach(d=>{if(!ql||(d.driverName||'').toLowerCase().includes(ql)||(d.driverId||'').toLowerCase().includes(ql))m.push({label:d.driverName,sub:d.driverId,raw:d})});
+else if(cat==='Assets')fleetData.asset_ids.forEach(a=>{if(!ql||String(a).toLowerCase().includes(ql))m.push({label:String(a),sub:'',raw:a})});
+else if(cat==='Trips')getTripPickerSource().forEach(t=>{if(!ql||t.label.toLowerCase().includes(ql))m.push(t)});
+else if(cat==='Event Types')fleetData.events.forEach(e=>{if(!ql||String(e).toLowerCase().includes(ql))m.push({label:String(e),sub:'',raw:e})});
+currentAcState.focusIdx=-1;const icons={'Drivers':'person','Assets':'local_shipping','Trips':'route','Event Types':'warning'};c._data=m;
+if(!m.length){c.innerHTML=`<div class="filter-panel-head"><button class="back-btn" onclick="clearCatScope()">← Back</button><span>${cat}</span></div><div class="no-data">No matches</div>`;return}
+c.innerHTML=`<div class="filter-panel-head"><button class="back-btn" onclick="clearCatScope()">← Back</button><span>${cat}</span></div><div class="filter-item-scroll">${m.map((x,i)=>`<div class="filter-row chat-ac-item" data-idx="${i}" onclick="stageLocal(${i})"><div class="filter-icon">${micon(icons[cat]||'category')}</div><div class="filter-info"><div class="filter-name">${hl(x.label,sq)}</div>${x.sub?`<div class="filter-sub">${hl(x.sub,sq)}</div>`:''}</div></div>`).join('')}</div>`}
+
+function clearCatScope(){currentAcState.selectedCategory=null;const inp=document.getElementById(currentAcState.activeInputId);inp.value=textBeforeAt+'@';inp.focus();execGlobalSearch('');openAcPanel()}
+function hl(t,h){if(!h)return esc(t);const e=h.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&');return t.split(new RegExp(`(${e})`,'gi')).map(s=>s.toLowerCase()===h.toLowerCase()?`<strong>${esc(s)}</strong>`:esc(s)).join('')}
+
+// FIX 2: staging a driver/asset/event via @-autocomplete now ALSO writes the
+// picked label back into the visible input text (not just into an invisible
+// chip object). That way the literal text the backend's merge_filters_from_text
+// parses always contains what the user picked — a driver chosen this way will
+// actually be reflected in the query, so trips for that driver show up.
+function stageLocal(i){const c=document.getElementById(currentAcState.resultsElementId);const m=c._data;if(!m||!m[i])return;
+const match=m[i],cat=currentAcState.selectedCategory;let si;
+if(cat==='Drivers')si=match.raw;else if(cat==='Assets')si={assetId:match.raw};else if(cat==='Trips')si={tripId:match.raw,label:match.label};else si={event_type:match.raw};
+currentAcState.collectedItems.push({option:cat,selectedItem:si});
+const inp=document.getElementById(currentAcState.activeInputId);
+inp.value=textBeforeAt+(cat!=='Trips'?match.label+' ':'');textBeforeAt='';
+renderChip(cat,match.label,currentAcState.collectedItems.length-1);closeAc();currentAcState.selectedCategory=null;inp.focus()}
+
+function stageGlobal(gid){const c=document.getElementById(currentAcState.resultsElementId);const me=c._gdi[gid];if(!me)return;
+const cat=me.category;let si;
+if(cat==='Drivers')si=me.rawData;else if(cat==='Assets')si={assetId:me.rawData};else if(cat==='Trips')si={tripId:me.rawData,label:me.displayLabel};else si={event_type:me.rawData};
+currentAcState.collectedItems.push({option:cat,selectedItem:si});
+const inp=document.getElementById(currentAcState.activeInputId);
+inp.value=textBeforeAt+(cat!=='Trips'?me.displayLabel+' ':'');textBeforeAt='';
+renderChip(cat,me.displayLabel,currentAcState.collectedItems.length-1);closeAc();currentAcState.selectedCategory=null;inp.focus()}
+
+function getChipCont(){return currentAcState.activeInputId==='main-input'?'landing-pill-tags':'chat-pill-tags'}
+function chipIcon(cat){const n={'Drivers':'person','Assets':'local_shipping','Trips':'route','Event Types':'warning','DateRange':'calendar_month'}[cat]||'category';return `<span class="material-symbols-outlined" style="font-size:13px">${n}</span>`}
+function renderChip(cat,label,idx){const cont=document.getElementById(getChipCont());if(!cont)return;
+const ch=document.createElement('span');ch.className='selected-tag';
+if(cat==='Trips'){ch.innerHTML=`<span onclick="highlightTripChip(${idx})" style="cursor:pointer">${chipIcon(cat)} ${esc(label)}</span> <button class="selected-tag-remove" onclick="rmChip(${idx})">×</button>`;}
+else{ch.innerHTML=`${chipIcon(cat)} ${esc(label)} <button class="selected-tag-remove" onclick="rmChip(${idx})">×</button>`;}
+cont.appendChild(ch)}
+function rmChip(i){currentAcState.collectedItems.splice(i,1);rerenderChips()}
+function rerenderChips(){['landing-pill-tags','chat-pill-tags'].forEach(id=>{const c=document.getElementById(id);if(c)c.innerHTML=''});
+const isL=document.getElementById('landing').style.display!=='none';const cid=isL?'landing-pill-tags':'chat-pill-tags';
+currentAcState.collectedItems.forEach((e,i)=>{
+let lbl;
+if(e.option==='Drivers')lbl=e.selectedItem.driverName||e.selectedItem.driverId;
+else if(e.option==='DateRange')lbl=e.selectedItem.label;
+else if(e.option==='Trips')lbl=e.selectedItem.label||friendlyTripLabel({driverName:'Trip',assetId:''});
+else lbl=e.selectedItem.assetId||e.selectedItem.event_type||'';
+const c=document.getElementById(cid);if(!c)return;const ch=document.createElement('span');ch.className='selected-tag';
+if(e.option==='Trips'){ch.innerHTML=`<span onclick="highlightTripChip(${i})" style="cursor:pointer">${chipIcon(e.option)} ${esc(String(lbl))}</span> <button class="selected-tag-remove" onclick="rmChip(${i})">×</button>`;}
+else{ch.innerHTML=`${chipIcon(e.option)} ${esc(String(lbl))} <button class="selected-tag-remove" onclick="rmChip(${i})">×</button>`;}
+c.appendChild(ch)})}
+function clearChips(){['landing-pill-tags','chat-pill-tags'].forEach(id=>{const c=document.getElementById(id);if(c)c.innerHTML=''})}
+
+function highlightTripRow(idx){const rows=document.querySelectorAll('.tt-row');rows.forEach(r=>r.classList.remove('tt-row-selected'));if(rows[idx])rows[idx].classList.add('tt-row-selected')}
+function highlightTripChip(idx){const entry=currentAcState.collectedItems[idx];if(!entry||entry.option!=='Trips')return;
+const tripId=entry.selectedItem.tripId;const rowIdx=currentTrips.findIndex(t=>t.tripId===tripId);
+if(rowIdx>-1){highlightTripRow(rowIdx);document.querySelectorAll('.tt-row')[rowIdx]?.scrollIntoView({behavior:'smooth',block:'center'})}}
+
+// FIX 3: selecting a trip for the DVR request now updates a dedicated banner
+// above the chat input AND relabels/recolors the row's action button, so it's
+// unambiguous which trip is staged — not just an inline highlight.
+function setTripChip(trip,rowIdx){const existing=currentAcState.collectedItems.findIndex(e=>e.option==='Trips');
+if(existing>-1)currentAcState.collectedItems.splice(existing,1);
+currentAcState.collectedItems.push({option:'Trips',selectedItem:{tripId:trip.tripId,label:friendlyTripLabel(trip)}});
+rerenderChips();highlightTripRow(rowIdx);markRowSelectedButton(rowIdx);updateSelectedTripBanner(trip)}
+
+function markRowSelectedButton(idx){
+  document.querySelectorAll('.req-btn').forEach(b=>{if(!b.disabled){b.textContent='Use trip';b.classList.remove('req-btn-selected')}});
+  const btn=document.getElementById('req-btn-'+idx);
+  if(btn){btn.innerHTML=`<span class="material-symbols-outlined" style="font-size:13px">check</span> Selected`;btn.classList.add('req-btn-selected')}
+}
+
+function updateSelectedTripBanner(trip){
+  const b=document.getElementById('selected-trip-banner');
+  if(!trip){b.style.display='none';b.innerHTML='';return}
+  const startFmt=trip.startTimeUTC?new Date(trip.startTimeUTC).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}):'';
+  b.innerHTML=`<span>${micon('videocam')} Selected for request: <strong>${esc(trip.assetId||'')}</strong> · ${esc(trip.driverName||'')} · ${esc(startFmt)}</span><button class="stb-clear" onclick="clearSelectedTrip()">Clear</button>`;
+  b.style.display='flex'
+}
+
+function clearSelectedTrip(){
+  const idx=currentAcState.collectedItems.findIndex(e=>e.option==='Trips');
+  if(idx>-1)currentAcState.collectedItems.splice(idx,1);
+  rerenderChips();
+  document.querySelectorAll('.tt-row').forEach(r=>r.classList.remove('tt-row-selected'));
+  document.querySelectorAll('.req-btn').forEach(b=>{if(!b.disabled){b.textContent='Use trip';b.classList.remove('req-btn-selected')}});
+  updateSelectedTripBanner(null)
+}
+
+function buildActiveFilters(){
+  const driverEntry=currentAcState.collectedItems.find(e=>e.option==='Drivers');
+  const assetEntry=currentAcState.collectedItems.find(e=>e.option==='Assets');
+  const eventEntries=currentAcState.collectedItems.filter(e=>e.option==='Event Types');
+  const dateEntry=currentAcState.collectedItems.find(e=>e.option==='DateRange');
+  return{driver:driverEntry?{driverId:driverEntry.selectedItem.driverId,driverName:driverEntry.selectedItem.driverName}:null,
+  asset:assetEntry?assetEntry.selectedItem.assetId:null,
+  events:eventEntries.length?eventEntries.map(e=>e.selectedItem.event_type):null,
+  date_range:dateEntry?{start:dateEntry.selectedItem.start,end:dateEntry.selectedItem.end}:null}}
+
+function applyBackendFilterChips(filters){
+  currentAcState.collectedItems=[];
+  if(filters.driver)currentAcState.collectedItems.push({option:'Drivers',selectedItem:{driverId:filters.driver.driverId,driverName:filters.driver.driverName}});
+  if(filters.asset)currentAcState.collectedItems.push({option:'Assets',selectedItem:{assetId:filters.asset}});
+  if(filters.events&&filters.events.length)filters.events.forEach(ev=>currentAcState.collectedItems.push({option:'Event Types',selectedItem:{event_type:ev}}));
+  // FIGMA: guard against invalid/epoch timestamps from the backend so a bogus
+  // "1 January 1970" chip never renders — only build the chip when both
+  // dates parse to a real, sane year.
+  if(filters.date_range&&filters.date_range.start&&filters.date_range.end){
+    const s=new Date(filters.date_range.start),e=new Date(filters.date_range.end);
+    const validYear=d=>!isNaN(d.getTime())&&d.getFullYear()>1971;
+    if(validYear(s)&&validYear(e)){
+      const fmt=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+      currentAcState.collectedItems.push({option:'DateRange',selectedItem:{label:`${fmt(s)} – ${fmt(e)}`,start:filters.date_range.start,end:filters.date_range.end}});
+    }
+  }
+  rerenderChips()}
+
+function onLandingInput(){evaluateAutocompleteTrigger('main-input','landing-filter-panel','landing-item-list')}
+function onChatInput(e){autoResize(e.target);evaluateAutocompleteTrigger('chat-input','chat-ac-dropdown','chat-ac-list')}
+function onLandingKeydown(e){handleKD(e,'main-input')}
+function onChatKeydown(e){handleKD(e,'chat-input')}
+function handleKD(e,iid){const po=document.getElementById(currentAcState.panelElementId||'landing-filter-panel')?.classList.contains('open')||document.getElementById('chat-ac-dropdown')?.classList.contains('open');
+if(!po){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();iid==='main-input'?landingSend():chatSend()}return}
+const rc=document.getElementById(currentAcState.resultsElementId);const items=rc?rc.querySelectorAll('.chat-ac-item'):[];
+if(items.length>0){if(e.key==='ArrowDown'){e.preventDefault();currentAcState.focusIdx=Math.min(currentAcState.focusIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('focused',i===currentAcState.focusIdx));items[currentAcState.focusIdx]?.scrollIntoView({block:'nearest'})}
+else if(e.key==='ArrowUp'){e.preventDefault();currentAcState.focusIdx=Math.max(currentAcState.focusIdx-1,0);items.forEach((it,i)=>it.classList.toggle('focused',i===currentAcState.focusIdx));items[currentAcState.focusIdx]?.scrollIntoView({block:'nearest'})}
+else if(e.key==='Enter'){e.preventDefault();currentAcState.focusIdx>=0?items[currentAcState.focusIdx].click():(iid==='main-input'?landingSend():chatSend())}
+else if(e.key==='Escape')closeAc()}else{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();iid==='main-input'?landingSend():chatSend()}}}
+
+function buildTagCtx(){return currentAcState.collectedItems.filter(e=>e.option!=='DateRange').map(e=>{if(e.option==='Drivers')return`[Driver: ${e.selectedItem.driverName||e.selectedItem.driverId}]`;if(e.option==='Assets')return`[Asset: ${e.selectedItem.assetId}]`;if(e.option==='Trips')return`[Trip: ${e.selectedItem.tripId}]`;if(e.option==='Event Types')return`[Event: ${e.selectedItem.event_type}]`;return''}).filter(Boolean).join(' ')}
+
+function landingSend(){const inp=document.getElementById('main-input');const text=inp.value.trim();const tc=buildTagCtx();const fq=(tc?tc+' ':'')+text;if(!fq.trim())return;
+closeAc();inp.value='';showChat();appendUser(fq);storeMsg('user',fq);showTyping();dispatch(fq)}
+
+// FIX 2: the tag context (which now duplicates what's already visible in the
+// input, but formatted so merge_filters_from_text can reliably parse it) is
+// included on every send path — including resumed/paused graph turns, which
+// previously sent only the raw textarea text and silently dropped any
+// driver/asset/event filters the user had staged via chips.
+function chatSend(){
+  const inp=document.getElementById('chat-input');const text=inp.value.trim();if(!text)return;
+  closeAc();inp.value='';autoResize(inp);
+  const tc=buildTagCtx();const fq=(tc?tc+' ':'')+text;
+  if(graphPaused){
+    appendUser(fq);storeMsg('user',fq);showTyping();
+    const tripEntry=currentAcState.collectedItems.find(e=>e.option==='Trips');
+    wsSend({type:'resume_graph',thread_id:activeThreadId,resume_value:{text:fq,tripId:tripEntry?tripEntry.selectedItem.tripId:null,activeFilters:buildActiveFilters()}});
+  }else{
+    appendUser(fq);storeMsg('user',fq);showTyping();dispatch(fq);
+  }
+}
+
+function dispatch(pt){if(currentAcState.collectedItems.length>0){let fp={query:pt,fleet_id:fleetData.fleet_id,query_type:'directed'};
+currentAcState.collectedItems.forEach(e=>{if(e.option==='Drivers')fp.selectedItem=e.selectedItem;else if(e.option==='Assets')fp.selectedItem={assetId:e.selectedItem.assetId};else if(e.option==='Trips')fp.selectedItem={tripId:e.selectedItem.tripId};else if(e.option==='Event Types')fp.selectedItem={event_type:e.selectedItem.event_type};if(e.option!=='DateRange')fp.option=e.option});
+wsSend({type:'autocomplete_result',...fp,thread_id:activeThreadId})}else{wsSend({type:'only_query',query:pt,thread_id:activeThreadId,fleet_id:fleetData.fleet_id})}}
+
+function newThread(){currentAcState.collectedItems=[];clearChips();graphPaused=false;currentTrips=[];currentConfirmParams=null;lastDvrRequestDetails=null;pendingDvrType=null;updateSelectedTripBanner(null);document.getElementById('messages-area').innerHTML='';const id='t_'+Date.now();threads[id]=[];activeThreadId=id;showLanding();clearCanvas()}
+function showLanding(){document.getElementById('landing').style.display='flex';document.getElementById('messages-area').classList.remove('active');document.getElementById('chat-input-bar').classList.remove('active')}
+function showChat(){document.getElementById('landing').style.display='none';document.getElementById('messages-area').classList.add('active');document.getElementById('chat-input-bar').classList.add('active')}
+newThread();
+
+// ── UI renderers ────────────────────────────────────────────────────────────
+function appendUser(t){const a=document.getElementById('messages-area');const d=document.createElement('div');d.className='msg user';d.innerHTML=`<div class="msg-avatar">U</div><div class="msg-body"><div class="msg-role">You</div><div class="msg-text">${esc(t)}</div></div>`;a.appendChild(d);scroll()}
+function appendBot(t){const a=document.getElementById('messages-area');const d=document.createElement('div');d.className='msg assistant';d.innerHTML=`<div class="msg-avatar">${micon('smart_display')}</div><div class="msg-body"><div class="msg-role">DVR assistant</div><div class="gen-response">${esc(t)}</div></div>`;a.appendChild(d);scroll()}
+function showTyping(){const a=document.getElementById('messages-area');const d=document.createElement('div');d.className='msg assistant';d.id='typing-ind';d.innerHTML=`<div class="msg-avatar">${micon('smart_display')}</div><div class="msg-body"><div class="msg-role">DVR assistant</div><div class="typing"><span></span><span></span><span></span></div></div>`;a.appendChild(d);scroll()}
+function removeTyping(){const t=document.getElementById('typing-ind');if(t)t.remove()}
+
+function renderTimestampInterrupt(){const a=document.getElementById('messages-area');const w=document.createElement('div');w.className='interrupt-wrap';
+w.innerHTML=`<div class="interrupt-card"><div class="interrupt-card-head"><div class="ic-dot" style="background:var(--amber)"></div> Select date range</div><div class="interrupt-card-body"><div class="ts-grid"><div><div class="ts-label">From</div><input class="ts-input" type="datetime-local" id="ts-start"/></div><div><div class="ts-label">To</div><input class="ts-input" type="datetime-local" id="ts-end"/></div></div><div class="btn-row"><button class="btn btn-purple" onclick="submitTS()">Search trips</button><button class="btn btn-ghost" onclick="this.closest('.interrupt-wrap').remove()">Cancel</button></div></div></div>`;
+a.appendChild(w);scroll()}
+
+function submitTS(){
+  const s=document.getElementById('ts-start').value,e=document.getElementById('ts-end').value;if(!s||!e)return;
+  const startIso=new Date(s).toISOString(),endIso=new Date(e).toISOString();
+  const label=`${new Date(s).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${new Date(e).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+  renderChip('DateRange',label,currentAcState.collectedItems.length);
+  currentAcState.collectedItems.push({option:'DateRange',selectedItem:{label,start:startIso,end:endIso}});
+  wsSend({type:'resume_graph',thread_id:activeThreadId,resume_value:{start_time:startIso,end_time:endIso}});
+  document.querySelector('.interrupt-wrap')?.remove();showTyping()}
+
+function renderTripResults(trips,summary){
+  currentTrips=trips;
+  appendBot(summary+' Results are shown in the panel.');
+  if(trips.length>0){
+    appendBot('Would you like to raise a footage request for any of these trips?');
+    const chipsDiv=document.createElement('div');chipsDiv.className='action-chips';
+    chipsDiv.innerHTML=`<button class="action-chip" onclick="startDvr('clip')">${micon('videocam')} Request a DVR clip</button><button class="action-chip" onclick="startDvr('timelapse')">${micon('timelapse')} Request a timelapse</button>`;
+    document.getElementById('messages-area').appendChild(chipsDiv);
+  }
+  document.getElementById('canvas-empty').style.display='none';
+  document.getElementById('canvas-header').style.display='flex';
+  document.getElementById('canvas-title').textContent=summary;
+  document.getElementById('canvas-count').textContent=`${trips.length} trip${trips.length!==1?'s':''}`;
+  document.getElementById('trip-table').style.display='block';
+  const body=document.getElementById('tt-body');body.innerHTML='';
+  trips.forEach((t,i)=>{
+    const startFmt=t.startTimeUTC?new Date(t.startTimeUTC).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}):'—';
+    const pingedFmt=t.lastPinged?new Date(t.lastPinged).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'}):'—';
+    const pingedColor=t.lastPingedLabel==='Ongoing'?'var(--green)':'var(--text-tri)';
+    const statusClass=t.dvr_status==='available'?'badge-available':t.dvr_status==='expiring'?'badge-expiring':'badge-expired';
+    const statusLabel=t.dvr_status==='available'?'Available':t.dvr_status==='expiring'?'Expiring':'Expired';
+    const isExpired=t.dvr_status==='expired';
+    const evtCount=t.totalEvents||0;
+    let evtHtml='';
+    if(evtCount>0){const evtId='evt_'+i;evtHtml=`<span class="evt-toggle" onclick="document.getElementById('${evtId}').classList.toggle('open');this.textContent=document.getElementById('${evtId}').classList.contains('open')?'${evtCount} events ▾':'${evtCount} events ▸'">${evtCount} events ▸</span><div class="evt-list" id="${evtId}">${t.events.map(e=>`<span class="evt-badge">${esc(e.type)} (${e.count})</span>`).join('')}</div>`}
+    else{evtHtml='<span style="font-size:11px;color:var(--text-tri)">None</span>'}
+    const row=document.createElement('div');row.className='tt-row'+(isExpired?' expired-row':'');
+    row.innerHTML=`<div class="tt-col col-asset"><div class="tt-asset">${esc(t.assetId)}</div></div>
+<div class="tt-col col-driver tt-cell">${esc(t.driverName)}</div>
+<div class="tt-col col-start tt-cell">${startFmt}</div>
+<div class="tt-col col-pinged tt-cell"><span class="pinged-dot" style="background:${pingedColor}"></span>${pingedFmt}<br><span style="font-size:10px;color:var(--text-tri)">${t.lastPingedLabel}</span></div>
+<div class="tt-col col-events">${evtHtml}</div>
+<div class="tt-col col-dvr"><span class="badge ${statusClass}">${statusLabel}</span>${t.dvr_until?`<div style="font-size:10px;color:var(--text-tri);margin-top:2px">${esc(t.dvr_until)}</div>`:''}</div>
+<div class="tt-col col-action">${isExpired?'<button class="req-btn" disabled>No DVR</button>':`<button class="req-btn" id="req-btn-${i}" onclick="requestVideoFromTable(${i})">Use trip</button>`}</div>`;
+    body.appendChild(row)});
+  scroll()}
+
+function clearCanvas(){document.getElementById('canvas-empty').style.display='flex';document.getElementById('canvas-header').style.display='none';document.getElementById('trip-table').style.display='none';document.getElementById('tt-body').innerHTML=''}
+
+function sendDvrRequestForTrip(trip,type){
+  const label=type==='clip'?'DVR clip':'timelapse';
+  const s=new Date(trip.startTimeUTC).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'});
+  const inp=document.getElementById('chat-input');
+  inp.value=`Request a ${label} from ${s}`;
+  autoResize(inp);
+  chatSend();
+}
+
+function startDvr(type){
+  pendingDvrType=type;
+  // if a trip is already staged (e.g. via "Use trip"), use it directly
+  const tripEntry=currentAcState.collectedItems.find(e=>e.option==='Trips');
+  const selectedTrip=tripEntry?currentTrips.find(t=>t.tripId===tripEntry.selectedItem.tripId):null;
+  if(selectedTrip){ sendDvrRequestForTrip(selectedTrip,type); }
+  else if(currentTrips.length===1){ setTripChip(currentTrips[0],0); sendDvrRequestForTrip(currentTrips[0],type); }
+  else{ const inp=document.getElementById('chat-input');const label=type==='clip'?'DVR clip':'timelapse';inp.value=`Request a ${label} — `;inp.focus();autoResize(inp); }
+}
+
+// "Use trip" now stages the trip and asks clip vs timelapse,
+// instead of assuming "clip" and sending immediately.
+function requestVideoFromTable(idx){
+  const trip=currentTrips[idx];if(!trip)return;
+  setTripChip(trip,idx);
+  pendingDvrType=null;
+  document.getElementById('trip-type-prompt')?.remove();
+  appendBot(`Selected ${trip.assetId} · ${trip.driverName||''} — what would you like to request?`);
+  const chipsDiv=document.createElement('div');chipsDiv.id='trip-type-prompt';chipsDiv.className='action-chips action-chips-lg';
+  chipsDiv.innerHTML=`<button class="action-chip" onclick="startDvr('clip')">${micon('videocam')} Request a DVR clip</button><button class="action-chip" onclick="startDvr('timelapse')">${micon('timelapse')} Request a timelapse</button>`;
+  document.getElementById('messages-area').appendChild(chipsDiv);
+  scroll();
+}
+
+// ── Clip start / end helpers (FIX 4) ────────────────────────────────────────
+function fmtClip(iso){if(!iso)return '—';return String(iso).replace('T',' ').replace(/\.\d+/,'').replace(/\+.*$/,'')}
+function computeClipEnd(startIso,durMin){
+  if(!startIso)return '—';
+  const start=new Date(startIso);
+  if(isNaN(start.getTime()))return fmtClip(startIso); // unparseable — fall back to showing the raw start value rather than throwing
+  const end=new Date(start.getTime()+durMin*60000);
+  if(isNaN(end.getTime()))return fmtClip(startIso);
+  return end.toISOString().replace('T',' ').replace(/\.\d+Z$/,'')}
+function updateClipEnd(startIso){
+  const durSel=document.getElementById('dvr-duration');const endEl=document.getElementById('dvr-clip-end');
+  if(!durSel||!endEl)return;
+  endEl.textContent=computeClipEnd(startIso,parseFloat(durSel.value))}
+
+function renderConfirmDvr(payload){
+  const a=document.getElementById('messages-area');const w=document.createElement('div');w.className='interrupt-wrap';
+  const params=payload.params;const maxMin=payload.maxDurationMinutes;
+  currentConfirmParams=params; // keep full param set around for the success banner later
+  const durationOptions=maxMin===3?[0.5,1,2,3]:[15,30,45,60];
+  // FIX 4: the backend's confirm_dvr node emits camelCase keys —
+  // tripId/driverId/assetId/type/clipStart/clipEnd (see Graph_code.py's
+  // extract_dvr_intent). tripId is internal bookkeeping and clipEnd is
+  // meaningless before a duration is picked, so both are dropped from the
+  // generic param list; Clip start / Clip end get their own dynamic block below.
+  const hiddenKeys=['tripId','clipEnd'];
+  const friendlyKey={driverId:'Driver',assetId:'Asset',type:'Type'};
+  const rows=Object.entries(params).filter(([k])=>!hiddenKeys.includes(k))
+    .map(([k,v])=>`<div class="dvr-param-row"><span class="dvr-param-key">${esc(friendlyKey[k]||k)}</span><span class="dvr-param-val">${esc(String(v))}</span></div>`).join('');
+  const formatHtml=payload.videoFormatOptions.map(o=>`<option value="${o.value}">${o.label}</option>`).join('');
+  const resHtml=payload.resolutionOptions.map(r=>`<option value="${r}">${r}</option>`).join('');
+  const durHtml=durationOptions.map(d=>`<option value="${d}">${d} min</option>`).join('');
+  const clipStartRaw=params.clipStart;
+  w.innerHTML=`<div class="interrupt-card"><div class="interrupt-card-head"><div class="ic-dot" style="background:var(--purple)"></div> Confirm DVR request</div>
+  <div class="interrupt-card-body"><div class="dvr-params">${rows}</div>
+  <div class="clip-window">
+    <div class="clip-box"><div class="ts-label">Clip start</div><div class="clip-val" id="dvr-clip-start">${esc(fmtClip(clipStartRaw))}</div></div>
+    <div class="clip-box"><div class="ts-label">Clip end (start + duration)</div><div class="clip-val" id="dvr-clip-end">${esc(computeClipEnd(clipStartRaw,durationOptions[0]))}</div></div>
+  </div>
+  <div class="ts-grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px">
+    <div><div class="ts-label">Video format</div><select class="ts-input" id="dvr-format">${formatHtml}</select></div>
+    <div><div class="ts-label">Duration (max ${maxMin}m)</div><select class="ts-input" id="dvr-duration" onchange="updateClipEnd('${esc(clipStartRaw)}')">${durHtml}</select></div>
+    <div><div class="ts-label">Resolution</div><select class="ts-input" id="dvr-resolution">${resHtml}</select></div>
+  </div>
+  <div class="btn-row" style="margin-top:14px;">
+    <button class="btn btn-purple" onclick="confirmDvrInline(true,this)">Submit request</button>
+    <button class="btn btn-ghost" onclick="confirmDvrInline(false,this)">Cancel</button>
+  </div></div></div>`;
+  a.appendChild(w);scroll()}
+
+function confirmDvrInline(confirmed,btn){
+  let resume_value={confirmed};
+  if(confirmed){
+    const videoFormat=document.getElementById('dvr-format').value;
+    const videoResolution=document.getElementById('dvr-resolution').value;
+    const durationMinutes=parseFloat(document.getElementById('dvr-duration').value);
+    resume_value.videoFormat=videoFormat;resume_value.videoResolution=videoResolution;resume_value.durationMinutes=durationMinutes;
+    // FIX 5: capture the complete picture of what was actually submitted (all
+    // confirm-card fields plus the resolved clip start/end) so the success
+    // banner can echo it back, rather than only the 3 fields the backend summary carried.
+    // NOTE: backend params are camelCase (tripId/driverId/assetId/type/clipStart/clipEnd) —
+    // see Graph_code.py's extract_dvr_intent — matched here to actually work.
+    const clipStartEl=document.getElementById('dvr-clip-start');
+    const clipEndEl=document.getElementById('dvr-clip-end');
+    lastDvrRequestDetails={
+      ...(currentConfirmParams||{}),
+      videoFormat,videoResolution,durationMinutes,
+      clipStart:clipStartEl?clipStartEl.textContent:(currentConfirmParams?currentConfirmParams.clipStart:null),
+      clipEnd:clipEndEl?clipEndEl.textContent:null
+    };
+    delete lastDvrRequestDetails.tripId;
+  }
+  wsSend({type:'resume_graph',thread_id:activeThreadId,resume_value});
+  btn.closest('.interrupt-wrap').remove();
+  if(confirmed)showTyping()}
+
+function renderSuccess(id,summary){
+  const a=document.getElementById('messages-area');const d=document.createElement('div');d.className='result-banner';
+  let detailsHtml='';
+  if(lastDvrRequestDetails){
+    const det=lastDvrRequestDetails;
+    const labelMap={driverId:'Driver',assetId:'Asset',type:'Type',clipStart:'Clip start',clipEnd:'Clip end',videoFormat:'Format',videoResolution:'Resolution',durationMinutes:'Duration (min)'};
+    const order=['driverId','assetId','type','clipStart','clipEnd','videoFormat','videoResolution','durationMinutes'];
+    detailsHtml='<div class="dvr-params">'+order.filter(k=>det[k]!==undefined&&det[k]!==null)
+      .map(k=>`<div class="dvr-param-row"><span class="dvr-param-key">${esc(labelMap[k]||k)}</span><span class="dvr-param-val">${esc(String(det[k]))}</span></div>`).join('')+'</div>';
+  } else if(summary){
+    detailsHtml=`<div style="font-size:11px;color:var(--text-tri);margin-top:6px;">${esc(summary.type)} · ${esc(summary.videoFormat)} · ${esc(summary.videoResolution)}</div>`;
+  }
+  d.innerHTML=`<div class="result-banner-label"><span class="material-symbols-outlined" style="font-size:13px">check_circle</span> DVR request raised successfully</div><div class="result-banner-id">${esc(id)}</div>${detailsHtml}`;
+  a.appendChild(d);
+  lastDvrRequestDetails=null;currentConfirmParams=null;
+  clearSelectedTrip();
+  scroll()}
+
+function storeMsg(type,text){if(!activeThreadId)return;if(!threads[activeThreadId])threads[activeThreadId]=[];threads[activeThreadId].push({type,text})}
+function setQ(t){document.getElementById('main-input').value=t;document.getElementById('main-input').focus()}
+function scroll(){const a=document.getElementById('messages-area');a.scrollTop=a.scrollHeight}
+function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px'}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+// FIGMA: no emojis anywhere — render Material Symbols (Google's Material Design icon set) instead
+function micon(name){return `<span class="material-symbols-outlined">${name}</span>`}
+function openAcPanel(){const p=document.getElementById(currentAcState.panelElementId);if(p)p.classList.add('open')}
+function closeAc(){document.getElementById('landing-filter-panel')?.classList.remove('open');document.getElementById('chat-ac-dropdown')?.classList.remove('open');currentAcState.focusIdx=-1}
+function renderCatDropdown(){const c=document.getElementById(currentAcState.resultsElementId);if(!c)return;
+c.innerHTML=`<div class="filter-panel-head">Select category</div><div class="filter-item-scroll">${[{m:'Drivers',i:'person',l:'Drivers'},{m:'Assets',i:'local_shipping',l:'Assets'},{m:'Trips',i:'route',l:'Trips'},{m:'Event Types',i:'warning',l:'Event types'}].map(x=>`<div class="filter-row" onclick="injectCatToken('${x.m}')"><div class="filter-icon">${micon(x.i)}</div><div class="filter-info"><div class="filter-name">${x.l}</div></div><div class="filter-chevron">›</div></div>`).join('')}</div>`}
+function injectCatToken(cm){isInjectingCategoryToken=true;currentAcState.selectedCategory=cm;const inp=document.getElementById(currentAcState.activeInputId);const val=inp.value;
+const ai=currentAcState.lastAtIdx!==-1?currentAcState.lastAtIdx:val.lastIndexOf('@');textBeforeAt=val.slice(0,ai);inp.value='@';inp.focus();inp.setSelectionRange(1,1);
+wsSend({type:'autocomplete',option:cm,search:'',thread_id:activeThreadId});executeLocalSearchFilter(cm,'');openAcPanel();
+setTimeout(()=>{isInjectingCategoryToken=false},50)}
+
+window.injectCatToken=injectCatToken;window.clearCatScope=clearCatScope;window.stageGlobal=stageGlobal;
+window.stageLocal=stageLocal;window.rmChip=rmChip;window.requestVideoFromTable=requestVideoFromTable;
+window.startDvr=startDvr;window.confirmDvrInline=confirmDvrInline;window.highlightTripChip=highlightTripChip;
+window.clearSelectedTrip=clearSelectedTrip;window.updateClipEnd=updateClipEnd;
+</script>
+</body>
+</html>

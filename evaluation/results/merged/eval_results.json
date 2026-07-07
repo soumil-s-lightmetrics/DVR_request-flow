@@ -1,0 +1,57 @@
+{
+  "pinecone-oai_no-fleet": {
+    "handler": "pinecone-oai",
+    "fleet_config": "no-fleet",
+    "num_samples": 18,
+    "metrics": {
+      "faithfulness": 0.9137548181665829,
+      "answer_relevancy": 0.8481164885478307,
+      "context_precision": 0.4655826738048013,
+      "context_recall": NaN
+    }
+  },
+  "pinecone-oai_shield": {
+    "handler": "pinecone-oai",
+    "fleet_config": "shield",
+    "num_samples": 18,
+    "metrics": {
+      "faithfulness": 0.626984126984127,
+      "answer_relevancy": 0.6057096764172056,
+      "context_precision": 0.24575491337516173,
+      "context_recall": NaN
+    }
+  },
+  "pinecone-oai_non-shield": {
+    "handler": "pinecone-oai",
+    "fleet_config": "non-shield",
+    "num_samples": 18,
+    "metrics": {
+      "faithfulness": 0.9083333333333334,
+      "answer_relevancy": 0.8392426551949321,
+      "context_precision": 0.43223878163140406,
+      "context_recall": NaN
+    }
+  },
+  "oai-responses_no-fleet": {
+    "handler": "oai-responses",
+    "fleet_config": "no-fleet",
+    "num_samples": 18,
+    "metrics": {
+      "faithfulness": 0.9262820512820513,
+      "answer_relevancy": 0.9292158720533735,
+      "context_precision": 0.9999999999111111,
+      "context_recall": NaN
+    }
+  },
+  "oai-assistant_no-fleet": {
+    "handler": "oai-assistant",
+    "fleet_config": "no-fleet",
+    "num_samples": 18,
+    "metrics": {
+      "faithfulness": 0.939351851851852,
+      "answer_relevancy": 0.9200223920371945,
+      "context_precision": 0.9999999999083333,
+      "context_recall": NaN
+    }
+  }
+}
