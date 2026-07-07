@@ -18,8 +18,11 @@ RUN mkdir -p /usr/src/app/logs && \
 
 COPY requirements-app.txt ./
 RUN pip install -r requirements-app.txt
-COPY requirements-app.txt ./
-RUN pip install -r requirements-app.txt
+COPY requirements-DVR.txt ./
+RUN pip install -r requirements-DVR.txt
+COPY requirements-eval.txt ./
+RUN pip install -r requirements-eval.txt
+
 
 ADD utils ./utils
 ADD tools ./tools
