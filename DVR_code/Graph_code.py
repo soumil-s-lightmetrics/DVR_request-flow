@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Literal
 
 from dotenv import load_dotenv
-from langchain.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.errors import GraphInterrupt

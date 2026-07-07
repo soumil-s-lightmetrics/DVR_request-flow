@@ -1,7 +1,7 @@
 import requests
 import os
 from datetime import datetime, timezone
-from langchain.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from DVR_code.state import AgentState
 from pydantic import BaseModel
