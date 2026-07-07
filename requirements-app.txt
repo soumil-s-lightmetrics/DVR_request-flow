@@ -30,7 +30,6 @@ pinecone
 partial-json-parser
 
 # --- DVR assistant dependencies (added, duplicates from above removed) ---
-starlette==1.2.1
 pydantic==2.13.4
 pydantic_core==2.46.4
 
