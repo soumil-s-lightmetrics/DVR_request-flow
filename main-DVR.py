@@ -44,6 +44,18 @@ def log_http_request(response):
 # DVR_frontend.html when the bundle hasn't been built yet (`cd frontend && npm run build`).
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
 
+@app.route('/debug-interrupt-test')
+def debug_interrupt_test():
+    from DVR_code.Graph_code import create_graph
+    graph = create_graph()
+    result = graph.invoke(
+        {"query": "fetch trips in the last month", "fleet_id": "acmetransport", "drivers": [], "query_type": "simple_query"},
+        config={"configurable": {"thread_id": "debug-test-railway-1"}}
+    )
+    return jsonify({
+        "keys": list(result.keys()),
+        "has_interrupt": "__interrupt__" in result
+    })
 
 @app.route('/')
 def get_ui():
