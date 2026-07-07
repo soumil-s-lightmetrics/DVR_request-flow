@@ -23,7 +23,7 @@ RUN pip install -r requirements-DVR.txt
 COPY requirements-eval.txt ./
 RUN pip install -r requirements-eval.txt
 
-
+ADD images ./images
 ADD utils ./utils
 ADD tools ./tools
 ADD DVR_code ./DVR_code
