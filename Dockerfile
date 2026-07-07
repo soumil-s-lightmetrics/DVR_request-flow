@@ -19,9 +19,6 @@ RUN mkdir -p /usr/src/app/logs && \
 COPY requirements-app.txt ./
 RUN pip install -r requirements-app.txt
 
-COPY requirements-eval.txt ./
-RUN pip install -r requirements-eval.txt
-
 ADD images ./images
 ADD utils ./utils
 ADD tools ./tools
