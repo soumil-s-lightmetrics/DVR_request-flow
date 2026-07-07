@@ -27,7 +27,7 @@ RUN pip install -r requirements-eval.txt
 ADD utils ./utils
 ADD tools ./tools
 ADD DVR_code ./DVR_code
-COPY main.py main-DVR.py config_log.py load_bulk_docs.py load_bulk_docs_categorised.py assistant_rag.py logger.py start_container.sh ./
+COPY main.py main-DVR.py DVR-frontend.html config_log.py load_bulk_docs.py load_bulk_docs_categorised.py assistant_rag.py logger.py start_container.sh ./
 
 COPY rag_utils/pinecone_openai_rag.py ./rag_utils/
 COPY files/filebeat/filebeat.yml.template /etc/filebeat/
