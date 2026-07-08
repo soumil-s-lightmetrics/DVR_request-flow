@@ -58,7 +58,6 @@ class ExtractedFilters(BaseModel):
 
 
 def extract_filters(state: AgentState):
-    print('extract node')
     try:
         structured_llm = llm_for_advance_reasoning.with_structured_output(
             ExtractedFilters
@@ -71,11 +70,10 @@ def extract_filters(state: AgentState):
                 )
             )
         ])
+        debug_logger.info(llm_response)
 
         if llm_response.driver_name:
-
             # Matching extracted driver_names from user_query to the fleet's list of drivers
-
             matching_drivers_list = resolve_driver_matches(
                 state.fleet_id, llm_response.driver_name)
         else:
@@ -316,6 +314,8 @@ def show_results(state: AgentState):
     })
     debug_logger.info('Showing results')
 
+    debug_logger.info(state.chosen_timestamp)
+
     # Checking if we are to show the full trip list or the filtered list
     if state.first_query:
         trips = state.all_trips
@@ -449,6 +449,7 @@ def extract_dvr_intent(state: AgentState):
         if response.intent == 'show_trips':
             debug_logger.info('>>> BEFORE merge_filters_from_text call')
             updated_state = merge_filters_from_text(state)
+            debug_logger.info(updated_state['chosen_timestamp'])
             debug_logger.info(
                 '>>> AFTER merge_filters_from_text call, about to log state'
             )
