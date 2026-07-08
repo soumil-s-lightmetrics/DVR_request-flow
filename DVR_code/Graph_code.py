@@ -161,34 +161,38 @@ def fetch_trips_with_expiry(state: AgentState):
             ## api_before : specifically when user searches trips in a particular day
             ## **difference between start date and end date, date needs to >= 1 day
             api_before = end_date + timedelta(days=1)
-            request_url = (
-                f"/v2/fleets/{state.fleet_id}/trips"
-                f"?before={api_before}&after={start_date}"
-            )
+            
+            params={
+                'before' : api_before,
+                'after' : start_date
+            }
+
             d_logger.info('Control number is not there')
             d_logger.info(start_date)
             control_number = 120
 
         else:
-            request_url = f"/v2/fleets/{state.fleet_id}/trips"
+            
+            params = {}
             d_logger.info('control number is there')
             control_number = state.limit_to_latest
+        
+        request_url = f"/v2/fleets/{state.fleet_id}/trips"
 
         driver_id_list = []
 
         if state.chosen_driver:
             for driver in state.chosen_driver:
                 driver_id_list.append(driver.get('driverId', ''))
-            params = {'driverId': ','.join(driver_id_list)}
+            params = {**params, 'driverId': ','.join(driver_id_list)}
             
             response = fetch_all_trips(
                 url=request_url, base_params=params,
                 skip=0, control_number=control_number)
                 
             all_trips = response
+
         else:
-            params = {}
-            
             response = fetch_all_trips(
                 url=request_url, base_params=params,
                 skip=0, control_number=control_number)

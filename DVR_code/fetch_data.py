@@ -7,7 +7,7 @@ from logger import debug_logger
 from utils.auth import auth_manager
 
 load_dotenv()
-debug_logger = debug_logger()
+d_logger = debug_logger()
 
 
 def fetch_all_trips(
@@ -28,7 +28,7 @@ def fetch_all_trips(
             'limit': limit,
             'skip': skip
         }
-
+        d_logger.info(url)
         try:
             data = auth_manager.make_api_request(
                 client_id = os.getenv('CLIENT_ID'),
@@ -36,21 +36,23 @@ def fetch_all_trips(
                 params = trip_params
             )
         except Exception as e:
-            debug_logger.error(f"Failed to parse JSON response: {e}")
+            d_logger.error(f"Failed to parse JSON response: {e}")
             break
 
         trips = data.get('rows', [])
 
+        d_logger.info(f'Fetched Trips : {trips[:2]}')
+
         if not trips:
-            debug_logger.info(
+            d_logger.info(
                 "No more rows returned from API. Ending pagination loop."
             )
             break
-
+        
         all_trips.extend(trips)
 
         if len(trips) < limit:
-            debug_logger.info(
+            d_logger.info(
                 f"Received {len(trips)} rows, less than limit {limit}."
                 " Ending pagination loop."
             )
@@ -58,7 +60,7 @@ def fetch_all_trips(
 
         skip += limit
 
-    debug_logger.info(f"Total trips fetched: {len(all_trips)}")
+    d_logger.info(f"Total trips fetched: {len(all_trips)}")
     return all_trips
 
 
@@ -77,7 +79,7 @@ def fetch_all_drivers(
             'skip': skip
         }
 
-        debug_logger.info(f"Fetching drivers with skip={skip}, limit={limit}")
+        d_logger.info(f"Fetching drivers with skip={skip}, limit={limit}")
 
         try:
             data = auth_manager.make_api_request(
@@ -86,13 +88,13 @@ def fetch_all_drivers(
                 params = trip_params
             )
         except Exception as e:
-            debug_logger.error(f"Failed to parse JSON driver response: {e}")
+            d_logger.error(f"Failed to parse JSON driver response: {e}")
             break
 
         rows = data.get('rows', [])
 
         if not rows:
-            debug_logger.info(
+            d_logger.info(
                 "No more driver records returned. Ending pagination loop."
             )
             break
@@ -104,7 +106,7 @@ def fetch_all_drivers(
             })
 
         if len(rows) < limit:
-            debug_logger.info(
+            d_logger.info(
                 f"Received {len(rows)} drivers, less than limit {limit}."
                 " Loop terminated."
             )
@@ -113,10 +115,10 @@ def fetch_all_drivers(
         skip += limit
 
         if skip > 3 * limit:
-            debug_logger.warning("Pagination hit depth guardrail safety breaker.")
+            d_logger.warning("Pagination hit depth guardrail safety breaker.")
             break
 
-    debug_logger.info(
+    d_logger.info(
         f"Total structured drivers matched and fetched: {len(all_drivers)}"
     )
     return all_drivers
