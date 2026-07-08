@@ -41,7 +41,7 @@ llm_for_advance_reasoning = ChatOpenAI(
     model='gpt-5.4',
     api_key=os.getenv('OPENAI_API_KEY')
 )
-debug_logger = debug_logger()
+d_logger = debug_logger()
 
 
 # Extracting parameters from the user query to filter the trips
@@ -71,7 +71,7 @@ def extract_filters(state: AgentState):
             )
         ])
 
-        debug_logger.info(f"Extracted info from query : {llm_response}")
+        d_logger.info(f"Extracted info from query : {llm_response}")
 
         if llm_response.driver_name:
             # Matching extracted driver_names from user_query to the fleet's list of drivers
@@ -96,7 +96,7 @@ def extract_filters(state: AgentState):
         raise
 
     except Exception as e:
-        debug_logger.error(f'failed in extract_filters: {e}', exc_info=True)
+        d_logger.error(f'failed in extract_filters: {e}', exc_info=True)
         raise DVRException(
             "We had trouble understanding your query. "
             "Could you rephrase it and try again?"
@@ -122,7 +122,7 @@ def ask_timestamp(state: AgentState):
     print()
     "if user hasn't mentioned a timeframe or hasn't asked for last/recent trips"
 
-    debug_logger.info('asking for search date range')
+    d_logger.info('asking for search date range')
     ts_response = interrupt({'message': 'please provide timestamp'})
     try:
         return {
@@ -137,7 +137,7 @@ def ask_timestamp(state: AgentState):
     except DVRException:
         raise
     except Exception as e:
-        debug_logger.error(f'failed in ask_timestamp : {e}', exc_info=True)
+        d_logger.error(f'failed in ask_timestamp : {e}', exc_info=True)
         raise DVRException(
             "We couldn't process the date range you provided. "
             "Please try selecting it again."
@@ -146,7 +146,7 @@ def ask_timestamp(state: AgentState):
 # Calling LM API's to fetch trip data
 
 def fetch_trips_with_expiry(state: AgentState):
-    debug_logger.info('Calling the API')
+    d_logger.info('Calling the API')
     try:
         ## limit_to_last --> if user asks for last 10 trips else according to timestamp
         if not state.limit_to_latest:
@@ -164,12 +164,12 @@ def fetch_trips_with_expiry(state: AgentState):
                 f"/v2/fleets/{state.fleet_id}/trips"
                 f"?before={api_before}&after={start_date}"
             )
-            debug_logger.info('Control number is not there')
+            d_logger.info('Control number is not there')
             control_number = 120
 
         else:
             request_url = f"/v2/fleets/{state.fleet_id}/trips"
-            debug_logger.info('control number is there')
+            d_logger.info('control number is there')
             control_number = state.limit_to_latest
 
         driver_id_list = []
@@ -193,7 +193,7 @@ def fetch_trips_with_expiry(state: AgentState):
             
             all_trips = response
 
-        debug_logger.info(all_trips[:5])
+        d_logger.info(all_trips[:5])
 
 # Filtering on the basis of the asset ids, since endpoint doesn't allow filtering on the base of the asset
         if state.chosen_asset_id:
@@ -263,7 +263,7 @@ def fetch_trips_with_expiry(state: AgentState):
 # Filtering on the base of the number of the events if specifically mentioned in the user's query
         if enriched:
             event_filter = state.chosen_events_count
-            debug_logger.info(f"Event Count {event_filter}")
+            d_logger.info(f"Event Count {event_filter}")
 
             if event_filter == 'max':
                 max_count = max(trip['totalEvents'] for trip in enriched)
@@ -274,7 +274,7 @@ def fetch_trips_with_expiry(state: AgentState):
             elif isinstance(event_filter, int):
                 enriched = [t for t in enriched if t['totalEvents'] == event_filter]
 
-        debug_logger(f'API Fetched trips : {enriched[:5]}')
+        d_logger(f'API Fetched trips : {enriched[:5]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         return {'all_trips': enriched, 'first_query': True}
@@ -284,20 +284,20 @@ def fetch_trips_with_expiry(state: AgentState):
     except DVRException:
         raise
     except requests.exceptions.Timeout:
-        debug_logger.error('Timeout fetching trips', exc_info=True)
+        d_logger.error('Timeout fetching trips', exc_info=True)
         raise DVRException.from_timeout()
     except requests.exceptions.ConnectionError:
-        debug_logger.error('Connection error fetching trips', exc_info=True)
+        d_logger.error('Connection error fetching trips', exc_info=True)
         raise DVRException.from_connection_error()
     except Exception as e:
-        debug_logger.error(f'failed in fetch_trips_with_expiry: {e}', exc_info=True)
+        d_logger.error(f'failed in fetch_trips_with_expiry: {e}', exc_info=True)
         raise DVRException(
             "We ran into an issue fetching your trips. "
             "Please try again in a moment."
         )
     
 def check_trips(state: AgentState):
-    debug_logger.info('Checking trip length')
+    d_logger.info('Checking trip length')
     if len(state.filter_trips or []) == 0:
         return "fetch_again"
     return "show results"
@@ -311,14 +311,14 @@ def check_trips_node(state: AgentState):
 # Showing all the thus filtered trips
 
 def show_results(state: AgentState):
-    debug_logger.info({
+    d_logger.info({
         'drivers': state.chosen_driver,
         'assets': state.chosen_asset_id,
         'timestamp': state.chosen_timestamp
     })
-    debug_logger.info('Showing results')
+    d_logger.info('Showing results')
 
-    debug_logger.info(state.chosen_timestamp)
+    d_logger.info(state.chosen_timestamp)
 
     # Checking if we are to show the full trip list or the filtered list
     if state.first_query:
@@ -411,14 +411,14 @@ class DvrIntent(BaseModel):
 
 def extract_dvr_intent(state: AgentState):
 
-    debug_logger.info('extracting DVR intent from message')
+    d_logger.info('extracting DVR intent from message')
     text = state.user_response or ''
 
     trips = state.all_trips if state.first_query else state.filter_trips
 
     try:
         if trips and len(trips) > 0:
-            debug_logger.info(json.dumps(trips[0]))
+            d_logger.info(json.dumps(trips[0]))
             trip_summary = json.dumps([
                 {
                     'tripId': t['tripId'],
@@ -446,33 +446,33 @@ def extract_dvr_intent(state: AgentState):
             HumanMessage(content=text),
             SystemMessage(content=system)
         ])
-        debug_logger.info(f'intent: {response}')
+        d_logger.info(f'intent: {response}')
 
         # The parameters from the second query will be merged with the new parameters
         if response.intent == 'show_trips':
-            debug_logger.info('>>> BEFORE merge_filters_from_text call')
+            d_logger.info('>>> BEFORE merge_filters_from_text call')
             updated_state = merge_filters_from_text(state)
 
-            debug_logger.info(f"Showing timestamp for the merged state : {updated_state['chosen_timestamp']}")
+            d_logger.info(f"Showing timestamp for the merged state : {updated_state['chosen_timestamp']}")
 
-            debug_logger.info(
+            d_logger.info(
                 '>>> AFTER merge_filters_from_text call, about to log state'
             )
             try:
-                debug_logger.info(
+                d_logger.info(
                     f'>>> state.chosen_driver = {state.chosen_driver}'
                 )
             except Exception as log_err:
-                debug_logger.error(
+                d_logger.error(
                     f'>>> logging state.chosen_driver FAILED: {log_err!r}'
                 )
             try:
-                debug_logger.info(f'>>> updated_state = {updated_state}')
+                d_logger.info(f'>>> updated_state = {updated_state}')
             except Exception as log_err:
-                debug_logger.error(
+                d_logger.error(
                     f'>>> logging updated_state FAILED: {log_err!r}'
                 )
-            debug_logger.info('>>> RETURNING updated_state now')
+            d_logger.info('>>> RETURNING updated_state now')
             return updated_state
 
         # In case the user asks a general question about the trips
@@ -584,7 +584,7 @@ def extract_dvr_intent(state: AgentState):
             'clipStart': clip_start.isoformat(),
             'clipEnd': clip_end.isoformat()
         }
-        debug_logger.info(f'assembled DVR params: {params}')
+        d_logger.info(f'assembled DVR params: {params}')
         return {'dvr_request_params': params, 'selected_trip_hint': None}
 
     except GraphInterrupt:
@@ -592,7 +592,7 @@ def extract_dvr_intent(state: AgentState):
     except DVRException:
         raise
     except Exception as e:
-        debug_logger.error(f'failed in extract_dvr_intent: {e}', exc_info=True)
+        d_logger.error(f'failed in extract_dvr_intent: {e}', exc_info=True)
         raise DVRException(
             "We had trouble processing your request. "
             "Could you try rephrasing it?"
@@ -608,7 +608,7 @@ def route_after_intent(state: AgentState):
 
 # Graph Node - Confirming the gathered parameters to the user before hitting the endpoint
 def confirm_dvr(state: AgentState):
-    debug_logger.info('Confirming DVR parameters')
+    d_logger.info('Confirming DVR parameters')
     params = state.dvr_request_params
     if not params:
         return {'chat_response': 'No DVR parameters to confirm.'}
@@ -654,7 +654,7 @@ def route_confirm(state: AgentState):
 
 # Graph Node - To hit the DVR request endpoint after confirming the parameters
 def submit_dvr_request(state: AgentState):
-    debug_logger.info('submitting DVR request')
+    d_logger.info('submitting DVR request')
     try:
         params = state.dvr_request_params
         if not params:
@@ -677,19 +677,19 @@ def submit_dvr_request(state: AgentState):
         }
 
         api_url = f"{url}/fleets/{state.fleet_id}/dvr/create-upload-request"
-        debug_logger.info(
+        d_logger.info(
             f'DVR submit: type={params.get("type")}, params={api_params}'
         )
 
         dvr_response = requests.post(
             url=api_url, params=api_params, headers=get_headers()
         )
-        debug_logger.info(f'DVR response: {dvr_response.status_code}')
+        d_logger.info(f'DVR response: {dvr_response.status_code}')
 
 
         if os.getenv('DEMO_MODE', 'false').lower() == 'true':
             fake_id = f"DVR-DEMO-{random.randint(10000, 99999)}"
-            debug_logger.info(f'Demo mode: returning fake request id {fake_id}')
+            d_logger.info(f'Demo mode: returning fake request id {fake_id}')
             return {
                 'uploadRequestId': fake_id,
                 'dvr_summary': {
@@ -724,13 +724,13 @@ def submit_dvr_request(state: AgentState):
     except DVRException:
         raise
     except requests.exceptions.Timeout:
-        debug_logger.error('Timeout submitting DVR', exc_info=True)
+        d_logger.error('Timeout submitting DVR', exc_info=True)
         raise DVRException.from_timeout()
     except requests.exceptions.ConnectionError:
-        debug_logger.error('Connection error submitting DVR', exc_info=True)
+        d_logger.error('Connection error submitting DVR', exc_info=True)
         raise DVRException.from_connection_error()
     except Exception as e:
-        debug_logger.error(f'failed in submit_dvr_request: {e}', exc_info=True)
+        d_logger.error(f'failed in submit_dvr_request: {e}', exc_info=True)
         raise DVRException(
             "Your video request couldn't be processed right now. "
             "Please try again in a moment."
@@ -780,6 +780,6 @@ def create_graph():
         return g.compile(checkpointer=memory, name='DVR Video Request')
 
     except Exception as e:
-        debug_logger.error(e)
+        d_logger.error(e)
         raise
         
