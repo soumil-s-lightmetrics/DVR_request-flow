@@ -146,6 +146,7 @@ def ask_timestamp(state: AgentState):
 # Calling LM API's to fetch trip data
 
 def fetch_trips_with_expiry(state: AgentState):
+    debug_logger.info('Calling the API')
     try:
         ## limit_to_last --> if user asks for last 10 trips else according to timestamp
         if not state.limit_to_latest:
@@ -353,7 +354,6 @@ def show_results(state: AgentState):
             'summary': 'Unexpected error occured, please try again',
             'first': first_time
         }
-    debug_logger.info(f'interrupt_payload: {interrupt_payload}, first_time={first_time}, results_shown={state.results_shown}')
 
     msg = interrupt(interrupt_payload)
 
