@@ -192,8 +192,8 @@ def fetch_trips_with_expiry(state: AgentState):
                 skip=0, control_number=control_number)
             
             all_trips = response
-            
-        debug_logger.info(all_trips)
+
+        debug_logger.info(all_trips[:5])
 
 # Filtering on the basis of the asset ids, since endpoint doesn't allow filtering on the base of the asset
         if state.chosen_asset_id:
@@ -273,6 +273,8 @@ def fetch_trips_with_expiry(state: AgentState):
                 enriched = [t for t in enriched if t['totalEvents'] == min_count]
             elif isinstance(event_filter, int):
                 enriched = [t for t in enriched if t['totalEvents'] == event_filter]
+
+        debug_logger(f'API Fetched trips : {enriched[:5]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         return {'all_trips': enriched, 'first_query': True}
