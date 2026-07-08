@@ -165,6 +165,7 @@ def fetch_trips_with_expiry(state: AgentState):
                 f"?before={api_before}&after={start_date}"
             )
             d_logger.info('Control number is not there')
+            d_logger.info(start_date)
             control_number = 120
 
         else:
