@@ -184,7 +184,6 @@ def fetch_trips_with_expiry(state: AgentState):
                 skip=0, control_number=control_number)
                 
             all_trips = response
-            debug_logger.info(all_trips)
         else:
             params = {}
             
@@ -193,6 +192,8 @@ def fetch_trips_with_expiry(state: AgentState):
                 skip=0, control_number=control_number)
             
             all_trips = response
+            
+        debug_logger.info(all_trips)
 
 # Filtering on the basis of the asset ids, since endpoint doesn't allow filtering on the base of the asset
         if state.chosen_asset_id:
