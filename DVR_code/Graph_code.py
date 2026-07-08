@@ -70,7 +70,8 @@ def extract_filters(state: AgentState):
                 )
             )
         ])
-        debug_logger.info(llm_response)
+
+        debug_logger.info(f"Extracted info from query : {llm_response}")
 
         if llm_response.driver_name:
             # Matching extracted driver_names from user_query to the fleet's list of drivers
@@ -146,7 +147,6 @@ def ask_timestamp(state: AgentState):
 
 def fetch_trips_with_expiry(state: AgentState):
     try:
-
         ## limit_to_last --> if user asks for last 10 trips else according to timestamp
         if not state.limit_to_latest:
             start_date = datetime.fromisoformat(
@@ -449,7 +449,9 @@ def extract_dvr_intent(state: AgentState):
         if response.intent == 'show_trips':
             debug_logger.info('>>> BEFORE merge_filters_from_text call')
             updated_state = merge_filters_from_text(state)
-            debug_logger.info(updated_state['chosen_timestamp'])
+
+            debug_logger.info(f"Showing timestamp for the merged state : {updated_state['chosen_timestamp']}")
+
             debug_logger.info(
                 '>>> AFTER merge_filters_from_text call, about to log state'
             )
