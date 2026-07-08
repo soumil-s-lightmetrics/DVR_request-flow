@@ -274,7 +274,7 @@ def fetch_trips_with_expiry(state: AgentState):
             elif isinstance(event_filter, int):
                 enriched = [t for t in enriched if t['totalEvents'] == event_filter]
 
-        d_logger(f'API Fetched trips : {enriched[:5]}')
+        d_logger.info(f'API Fetched trips : {enriched[:5]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         return {'all_trips': enriched, 'first_query': True}
