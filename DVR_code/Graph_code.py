@@ -13,6 +13,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 from pydantic import BaseModel
 from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.memory import MemorySaver
+
 
 from DVR_code.fetch_data import fetch_all_trips
 from DVR_code.helper_function import (
@@ -30,8 +32,7 @@ import sqlite3
 load_dotenv()
 
 conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
-memory = SqliteSaver(conn)
-
+memory = MemorySaver()
 
 llm_for_chat = ChatOpenAI(
     model='gpt-5.4-mini',
