@@ -184,7 +184,7 @@ def fetch_trips_with_expiry(state: AgentState):
                 skip=0, control_number=control_number)
                 
             all_trips = response
-
+            debug_logger.info(all_trips)
         else:
             params = {}
             
