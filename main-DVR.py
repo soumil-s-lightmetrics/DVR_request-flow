@@ -47,14 +47,19 @@ FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fronte
 @app.route('/debug-interrupt-test')
 def debug_interrupt_test():
     from DVR_code.Graph_code import create_graph
+    import os
     graph = create_graph()
     result = graph.invoke(
         {"query": "fetch trips in the last month", "fleet_id": "acmetransport", "drivers": [], "query_type": "simple_query"},
-        config={"configurable": {"thread_id": "debug-test-railway-1"}}
+        config={"configurable": {"thread_id": "debug-test-railway-2"}}
     )
+    db_exists = os.path.exists("checkpoints.db")
+    db_size = os.path.getsize("checkpoints.db") if db_exists else 0
     return jsonify({
         "keys": list(result.keys()),
-        "has_interrupt": "__interrupt__" in result
+        "has_interrupt": "__interrupt__" in result,
+        "db_exists": db_exists,
+        "db_size_bytes": db_size
     })
 
 @app.route('/')
