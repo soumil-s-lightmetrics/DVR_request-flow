@@ -23,7 +23,6 @@ COPY requirements-DVR.txt ./
 RUN pip install -r requirements-DVR.txt
 
 
-ADD images ./images
 ADD utils ./utils
 ADD tools ./tools
 ADD DVR_code ./DVR_code
