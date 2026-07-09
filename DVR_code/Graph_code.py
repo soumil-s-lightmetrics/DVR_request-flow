@@ -7,14 +7,12 @@ from typing import Literal
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.errors import GraphInterrupt
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt
 from pydantic import BaseModel
-from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.checkpoint.memory import MemorySaver
-
+from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg_pool import ConnectionPool
 
 from DVR_code.fetch_data import fetch_all_trips
 from DVR_code.helper_function import (
@@ -28,11 +26,13 @@ from DVR_code.state import AgentState, Timestamp
 from logger import debug_logger
 from utils.auth import get_headers
 import random
-import sqlite3
 load_dotenv()
 
-conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
-memory = MemorySaver()
+# Railway's Postgres plugin auto-injects this when the DB is attached to the service.
+DB_URI = os.environ["DATABASE_URL"]
+pg_pool = ConnectionPool(conninfo=DB_URI, max_size=20, kwargs={"autocommit": True, "prepare_threshold": 0})
+memory = PostgresSaver(pg_pool)
+memory.setup()
 
 llm_for_chat = ChatOpenAI(
     model='gpt-5.4-mini',
