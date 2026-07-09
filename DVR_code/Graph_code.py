@@ -687,54 +687,57 @@ def submit_dvr_request(state: AgentState):
             f'DVR submit: type={params.get("type")}, params={api_params}'
         )
 
-        dvr_response = requests.post(
-            url=api_url, params=api_params, headers=get_headers()
-        )
-        d_logger.info(f'DVR response: {dvr_response.status_code}')
+        dvr_summary = {
+            'type': params.get('type'),
+            'videoFormat': params.get('videoFormat'),
+            'videoResolution': params.get('videoResolution'),
+            'clipStart': params.get('clipStart'),
+            'clipEnd': params.get('clipEnd')
+        }
+        mock_on_failure = os.getenv('DVR_MOCK_ON_FAILURE', 'false').lower() == 'true'
 
+        try:
+            dvr_response = requests.post(
+                url=api_url, params=api_params, headers=get_headers()
+            )
+            d_logger.info(f'DVR response: {dvr_response.status_code}')
 
-        if os.getenv('DEMO_MODE', 'false').lower() == 'true':
+            if dvr_response.status_code != 200:
+                raise DVRException.from_status_code(
+                    dvr_response.status_code,
+                    detail="DVR submission"
+                )
+
+            result = json.loads(dvr_response.text)
+            return {
+                'uploadRequestId': result.get('uploadRequestId'),
+                'dvr_summary': dvr_summary
+            }
+
+        except (DVRException, requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
+            if not mock_on_failure:
+                if isinstance(e, requests.exceptions.Timeout):
+                    d_logger.error('Timeout submitting DVR', exc_info=True)
+                    raise DVRException.from_timeout()
+                if isinstance(e, requests.exceptions.ConnectionError):
+                    d_logger.error('Connection error submitting DVR', exc_info=True)
+                    raise DVRException.from_connection_error()
+                raise
+            d_logger.warning(
+                f'DVR submission failed ({e}); DVR_MOCK_ON_FAILURE is set, '
+                'returning a fake approval instead.'
+            )
             fake_id = f"DVR-DEMO-{random.randint(10000, 99999)}"
-            d_logger.info(f'Demo mode: returning fake request id {fake_id}')
             return {
                 'uploadRequestId': fake_id,
-                'dvr_summary': {
-                    'type': params.get('type'),
-                    'videoFormat': params.get('videoFormat'),
-                    'videoResolution': params.get('videoResolution'),
-                    'clipStart': params.get('clipStart'),
-                    'clipEnd': params.get('clipEnd')
-                }
+                'dvr_summary': dvr_summary
             }
-
-        if dvr_response.status_code != 200:
-            raise DVRException.from_status_code(
-                dvr_response.status_code,
-                detail="DVR submission"
-            )
-
-        result = json.loads(dvr_response.text)
-        return {
-            'uploadRequestId': result.get('uploadRequestId'),
-            'dvr_summary': {
-                'type': params.get('type'),
-                'videoFormat': params.get('videoFormat'),
-                'videoResolution': params.get('videoResolution'),
-                'clipStart': params.get('clipStart'),
-                'clipEnd': params.get('clipEnd')
-            }
-        }
 
     except GraphInterrupt:
         raise
     except DVRException:
         raise
-    except requests.exceptions.Timeout:
-        d_logger.error('Timeout submitting DVR', exc_info=True)
-        raise DVRException.from_timeout()
-    except requests.exceptions.ConnectionError:
-        d_logger.error('Connection error submitting DVR', exc_info=True)
-        raise DVRException.from_connection_error()
     except Exception as e:
         d_logger.error(f'failed in submit_dvr_request: {e}', exc_info=True)
         raise DVRException(
