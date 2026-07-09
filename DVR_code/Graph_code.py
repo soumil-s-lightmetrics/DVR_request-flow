@@ -669,7 +669,7 @@ def submit_dvr_request(state: AgentState):
                 "Please try selecting the trip again."
             )
 
-        url = os.getenv('API_BASE_URL')
+        url = os.getenv('INTERNAL_API_BASE_URL')
 
         api_params = {
             'fleetId': state.fleet_id,
@@ -714,8 +714,7 @@ def submit_dvr_request(state: AgentState):
                 'dvr_summary': dvr_summary
             }
 
-        except (DVRException, requests.exceptions.Timeout,
-                requests.exceptions.ConnectionError) as e:
+        except (DVRException, requests.exceptions.RequestException) as e:
             if not mock_on_failure:
                 if isinstance(e, requests.exceptions.Timeout):
                     d_logger.error('Timeout submitting DVR', exc_info=True)
