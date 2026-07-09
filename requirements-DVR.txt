@@ -36,4 +36,5 @@ flask-sock==0.7.0
 python-json-logger==2.0.7
 cachetools
 
-langgraph-checkpoint-sqlite
+langgraph-checkpoint-postgres==2.0.24
+psycopg[binary,pool]==3.2.10
