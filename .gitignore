@@ -2,6 +2,10 @@
 .env
 main2.py
 trial.ipynb
-myenv
+venv
 Graph_code2.py
 __pycache__
+checkpoints.db
+checkpoints.db-shm
+checkpoints.db-wal
+logs

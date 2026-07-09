@@ -18,7 +18,10 @@ LOG_BACKUP_COUNT = 3
 
 # Environment variables
 LOG_FORMAT = os.getenv("LOG_FORMAT", "human").lower()
-LOG_TO_STDOUT = os.getenv("LOG_TO_STDOUT", "false").lower() == "true"
+# Railway (and most PaaS platforms) only capture stdout/stderr as "deploy logs" -
+# there's no volume to read log files from, so default to stdout when running there.
+RUNNING_ON_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
+LOG_TO_STDOUT = os.getenv("LOG_TO_STDOUT", "true" if RUNNING_ON_RAILWAY else "false").lower() == "true"
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 SERVICE_NAME = os.getenv("SERVICE_NAME", "lisa-api")
 SERVICE_VERSION = os.getenv("SERVICE_VERSION", "unknown")
