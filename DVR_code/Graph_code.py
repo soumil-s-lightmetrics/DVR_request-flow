@@ -50,7 +50,7 @@ d_logger = debug_logger()
 def start_check(state : AgentState):
     trips = state.all_trips
     if len(trips) > 0:
-        return 'EXTRACT_DVR'
+        return 'SHOW_RESULT'
     return 'EXTRACT_FILTERS'
 
 # Extracting parameters from the user query to filter the trips
@@ -385,7 +385,7 @@ def show_results(state: AgentState):
     updates = {'user_response': text, 'needs_refetch': False, 'error' : None}
 
     if trip_hint:
-        updates['selected_trip_hint'] = trip_hint
+        updates['requ_hint'] = trip_hint
 
     if active_filters is not None:
         updates['chosen_driver'] = (
@@ -516,8 +516,12 @@ def extract_dvr_intent(state: AgentState):
                 None
             )
         if not trip and response.trip_id:
+            # Same reasoning as selected_trip_hint above: an explicit trip id
+            # parsed out of the message (e.g. a "[Trip: ...]" tag) is
+            # unambiguous and shouldn't be constrained to the currently
+            # active filter scope.
             trip = next(
-                (t for t in trips
+                (t for t in (state.all_trips or [])
                  if t['tripId'] == response.trip_id
                  or response.trip_id in t['tripId']),
                 None
@@ -782,11 +786,9 @@ def create_graph():
     g.add_node("Submit_DVR", submit_dvr_request)
 
     g.add_conditional_edges(START, start_check, {
-        'EXTRACT_DVR' : "Extract_DVR_Intent",
-        'EXTRACT_FILTERS' : "Extract_Filters"
+        'SHOW_RESULT': "Show_Results",
+        'EXTRACT_FILTERS': "Extract_Filters"
     })
-
-    g.add_edge(START, "Extract_Filters")
 
     g.add_conditional_edges("Extract_Filters", check_timestamp, {
         'ask_timestamp': "Ask_Timestamp",

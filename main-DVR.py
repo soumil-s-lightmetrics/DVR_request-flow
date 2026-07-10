@@ -269,10 +269,18 @@ def chat_socket(ws):
                         }))
                         continue
 
+                    query_text = payload.get("query", "")
                     state = {
-                        "query":      payload.get("query", ""),
-                        "drivers":    fleet_data.get("driver_objects", []),
-                        "query_type": "directed"
+                        "query":         query_text,
+                        # extract_dvr_intent reads user_response, not query. On
+                        # a fresh invoke that lands on the start_check shortcut
+                        # (straight to Extract_DVR_Intent, bypassing
+                        # Show_Results where user_response is normally set),
+                        # user_response would otherwise stay stale from a
+                        # previous turn.
+                        "user_response": query_text,
+                        "drivers":       fleet_data.get("driver_objects", []),
+                        "query_type":    "directed"
                     }
                     # Only set fleet_id if we actually have one for this connection -
                     # omitting it (rather than passing None) avoids clobbering a
@@ -329,10 +337,16 @@ def chat_socket(ws):
                         continue
 
                     state = {
-                        "query":      query,
-                        "fleet_id":   fleet_data.get("fleet_id"),
-                        "drivers":    fleet_data.get("driver_objects", []),
-                        "query_type": "simple_query"
+                        "query":         query,
+                        # See the same note in the autocomplete_result handler
+                        # above - extract_dvr_intent reads user_response, and
+                        # this is a fresh invoke that can bypass Show_Results
+                        # (where user_response is otherwise set) via the
+                        # start_check shortcut at START.
+                        "user_response": query,
+                        "fleet_id":      fleet_data.get("fleet_id"),
+                        "drivers":       fleet_data.get("driver_objects", []),
+                        "query_type":    "simple_query"
                     }
 
                     _invoke_graph(ws, graph, state, config)
