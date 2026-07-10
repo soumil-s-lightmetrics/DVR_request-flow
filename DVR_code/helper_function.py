@@ -10,6 +10,7 @@ from DVR_code.prompt import merge_query
 from logger import debug_logger
 from typing import Literal
 from utils.auth import auth_manager
+from langsmith import traceable
 
 
 debug_logger = debug_logger()
@@ -75,7 +76,7 @@ def filter_enriched_trips(
         result.append(t)
     return result
 
-
+@traceable(run_type='tool')
 def resolve_driver_matches(fleet_id, driver_names: list):
     """
     Searches for driver names in the Fleet's drivers list, 
@@ -114,7 +115,7 @@ class ExtractedFilters1(BaseModel):
     limit_to_latest: int | None = None
     events: Literal['max', 'min'] | int | None = None
 
-
+@traceable(run_type='tool')
 def merge_filters_from_text(state: AgentState):
     try:
         active_filters_desc = describe_active_filters(state)

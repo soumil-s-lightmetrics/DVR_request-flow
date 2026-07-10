@@ -2,6 +2,7 @@ import os
 import requests
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from langsmith import traceable
 
 from logger import debug_logger
 from utils.auth import auth_manager
@@ -9,7 +10,7 @@ from utils.auth import auth_manager
 load_dotenv()
 d_logger = debug_logger()
 
-
+@traceable(run_type='tool')
 def fetch_all_trips(
         url: str,
         base_params: dict,
@@ -63,7 +64,7 @@ def fetch_all_trips(
     d_logger.info(f"Total trips fetched: {len(all_trips)}")
     return all_trips
 
-
+@traceable(run_type='tool')
 def fetch_all_drivers(
         url: str,
         base_params: dict,
