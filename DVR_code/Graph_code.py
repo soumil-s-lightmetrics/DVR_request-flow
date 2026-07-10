@@ -67,6 +67,7 @@ class ExtractedFilters(BaseModel):
 
 
 def extract_filters(state: AgentState):
+    d_logger.info('Entering node: Extract_Filters')
     try:
         structured_llm = llm_for_advance_reasoning.with_structured_output(
             ExtractedFilters
@@ -128,6 +129,7 @@ def check_timestamp(state: AgentState):
 # ask for timestamp if missing in the query
 
 def ask_timestamp(state: AgentState):
+    d_logger.info('Entering node: Ask_Timestamp')
     print()
     "if user hasn't mentioned a timeframe or hasn't asked for last/recent trips"
 
@@ -155,6 +157,7 @@ def ask_timestamp(state: AgentState):
 # Calling LM API's to fetch trip data
 
 def fetch_trips_with_expiry(state: AgentState):
+    d_logger.info('Entering node: Fetch_Trips')
     d_logger.info('Calling the API')
     try:
         ## limit_to_last --> if user asks for last 10 trips else according to timestamp
@@ -320,11 +323,13 @@ def check_trips(state: AgentState):
 # new DVR if the previous DVR request doesn't match user requirements
 
 def check_trips_node(state: AgentState):
+    d_logger.info('Entering node: Check_Trips')
     return {'first_query': False}
 
 # Showing all the thus filtered trips
 
 def show_results(state: AgentState):
+    d_logger.info('Entering node: Show_Results')
     d_logger.info({
         'drivers': state.chosen_driver,
         'assets': state.chosen_asset_id,
@@ -424,7 +429,7 @@ class DvrIntent(BaseModel):
 
 
 def extract_dvr_intent(state: AgentState):
-
+    d_logger.info('Entering node: Extract_DVR_Intent')
     d_logger.info('extracting DVR intent from message')
     text = state.user_response or ''
 
@@ -506,8 +511,14 @@ def extract_dvr_intent(state: AgentState):
         # intent == 'dvr_request'
         trip = None
         if state.selected_trip_hint:
+            # selected_trip_hint is an explicit, unambiguous selection (user
+            # clicked "Use trip" on a specific row) - look it up against the
+            # full trip set, not the currently active filter scope, since a
+            # newly picked trip may fall outside filters left over from a
+            # previous turn in this thread.
             trip = next(
-                (t for t in trips if t['tripId'] == state.selected_trip_hint),
+                (t for t in (state.all_trips or [])
+                 if t['tripId'] == state.selected_trip_hint),
                 None
             )
         if not trip and response.trip_id:
@@ -599,7 +610,16 @@ def extract_dvr_intent(state: AgentState):
             'clipEnd': clip_end.isoformat()
         }
         d_logger.info(f'assembled DVR params: {params}')
-        return {'dvr_request_params': params, 'selected_trip_hint': None}
+        return {
+            'dvr_request_params': params,
+            'selected_trip_hint': None,
+            # Clear any leftover result from a previously completed request in
+            # this thread so the UI doesn't show trip A's summary/upload id
+            # while trip B's request is still pending confirmation.
+            'dvr_summary': None,
+            'uploadRequestId': None,
+            'dvr_confirmed': None
+        }
 
     except GraphInterrupt:
         raise
@@ -622,6 +642,7 @@ def route_after_intent(state: AgentState):
 
 # Graph Node - Confirming the gathered parameters to the user before hitting the endpoint
 def confirm_dvr(state: AgentState):
+    d_logger.info('Entering node: Confirm_DVR')
     d_logger.info('Confirming DVR parameters')
     params = state.dvr_request_params
     if not params:
@@ -668,6 +689,7 @@ def route_confirm(state: AgentState):
 
 # Graph Node - To hit the DVR request endpoint after confirming the parameters
 def submit_dvr_request(state: AgentState):
+    d_logger.info('Entering node: Submit_DVR')
     d_logger.info('submitting DVR request')
     try:
         params = state.dvr_request_params
