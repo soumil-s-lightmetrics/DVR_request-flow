@@ -800,7 +800,8 @@ def create_graph():
     g.add_conditional_edges("Check_Trips", check_trips, {
         "fetch_again": 'Fetch_Trips',
         "show results": 'Show_Results'
-    })
+    }) 
+    
 
     g.add_edge("Show_Results", "Extract_DVR_Intent")
 
