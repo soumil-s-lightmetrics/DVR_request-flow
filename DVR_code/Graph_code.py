@@ -210,7 +210,7 @@ def fetch_trips_with_expiry(state: AgentState):
             
             all_trips = response
 
-        d_logger.info(all_trips[:5])
+        d_logger.info(all_trips[:1])
 
 # Filtering on the basis of the asset ids, since endpoint doesn't allow filtering on the base of the asset
         if state.chosen_asset_id:
@@ -291,7 +291,7 @@ def fetch_trips_with_expiry(state: AgentState):
             elif isinstance(event_filter, int):
                 enriched = [t for t in enriched if t['totalEvents'] == event_filter]
 
-        d_logger.info(f'API Fetched trips : {enriched[:5]}')
+        d_logger.info(f'API Fetched trips : {enriched[:1]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         return {'all_trips': enriched, 'first_query': True}
@@ -330,13 +330,7 @@ def check_trips_node(state: AgentState):
 
 def show_results(state: AgentState):
     d_logger.info('Entering node: Show_Results')
-    d_logger.info({
-        'drivers': state.chosen_driver,
-        'assets': state.chosen_asset_id,
-        'timestamp': state.chosen_timestamp
-    })
-    d_logger.info('Showing results')
-
+    
     d_logger.info(state.chosen_timestamp)
 
     # Checking if we are to show the full trip list or the filtered list
