@@ -271,10 +271,14 @@ def chat_socket(ws):
 
                     state = {
                         "query":      payload.get("query", ""),
-                        "fleet_id":   fleet_data.get("fleet_id"),
                         "drivers":    fleet_data.get("driver_objects", []),
                         "query_type": "directed"
                     }
+                    # Only set fleet_id if we actually have one for this connection -
+                    # omitting it (rather than passing None) avoids clobbering a
+                    # fleet_id already saved in the checkpoint from before a reconnect.
+                    if fleet_data.get("fleet_id"):
+                        state["fleet_id"] = fleet_data["fleet_id"]
 
                     if option == "Drivers":
                         state["chosen_driver"] = [{

@@ -45,6 +45,14 @@ llm_for_advance_reasoning = ChatOpenAI(
 d_logger = debug_logger()
 
 
+# conditional edge checks if there any trips in the state if it
+# has already fetched trips before then directly go to the extract dvr node
+def start_check(state : AgentState):
+    trips = state.all_trips
+    if len(trips) > 0:
+        return 'EXTRACT_DVR'
+    return 'EXTRACT_FILTERS'
+
 # Extracting parameters from the user query to filter the trips
 
 class ExtractedFilters(BaseModel):
@@ -757,7 +765,13 @@ def create_graph():
     g.add_node("Confirm_DVR", confirm_dvr)
     g.add_node("Submit_DVR", submit_dvr_request)
 
+    g.add_conditional_edges(START, start_check, {
+        'EXTRACT_DVR' : "Extract_DVR_Intent",
+        'EXTRACT_FILTERS' : "Extract_Filters"
+    })
+
     g.add_edge(START, "Extract_Filters")
+
     g.add_conditional_edges("Extract_Filters", check_timestamp, {
         'ask_timestamp': "Ask_Timestamp",
         'fetch_trips': "Fetch_Trips"
