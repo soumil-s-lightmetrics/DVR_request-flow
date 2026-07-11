@@ -14,14 +14,14 @@ from pydantic import BaseModel
 from langgraph.checkpoint.postgres import PostgresSaver
 from psycopg_pool import ConnectionPool
 
-from DVR_code.fetch_data import fetch_all_trips
+from DVR_code.fetch_data import fetch_all_trips, fetch_trips_by_asset
 from DVR_code.helper_function import (
     resolve_driver_matches,
     describe_active_filters,
     merge_filters_from_text
 )
 from DVR_code.exceptions import DVRException
-from DVR_code.prompt import simple_query, merge_query, general_query, intent_query
+from DVR_code.prompt import merge_query, general_query, intent_query
 from DVR_code.state import AgentState, Timestamp
 from logger import debug_logger
 from utils.auth import get_headers
@@ -46,15 +46,15 @@ d_logger = debug_logger()
 
 
 # conditional edge checks if there any trips in the state if it
-# has already fetched trips before then directly go to the extract dvr node
-def start_check(state : AgentState):
+# has already fetched trips before then directly go to the show trips interrup
+def start_check(state: AgentState):
     trips = state.all_trips
     if len(trips) > 0:
         return 'EXTRACT_DVR'
     return 'EXTRACT_FILTERS'
 
-# Extracting parameters from the user query to filter the trips
 
+# Extracting parameters from the user query to filter the trips
 class ExtractedFilters(BaseModel):
     driver_name: list[str] | None = []
     event_type: list[str] | None = []  # events mentioned in the query
@@ -154,13 +154,14 @@ def ask_timestamp(state: AgentState):
             "Please try selecting it again."
         )
 
-# Calling LM API's to fetch trip data
 
+# Calling LM API's to fetch trip data
 def fetch_trips_with_expiry(state: AgentState):
     d_logger.info('Entering node: Fetch_Trips')
     d_logger.info('Calling the API')
+
     try:
-        ## limit_to_last --> if user asks for last 10 trips else according to timestamp
+        # limit_to_last --> if user asks for last 10 trips else according to timestamp
         if not state.limit_to_latest:
             start_date = datetime.fromisoformat(
                 state.chosen_timestamp.start_time.replace("Z", "+00:00")
@@ -169,44 +170,52 @@ def fetch_trips_with_expiry(state: AgentState):
                 state.chosen_timestamp.end_time.replace("Z", "+00:00")
             ).date()
 
-            ## api_before : specifically when user searches trips in a particular day
-            ## **difference between start date and end date, date needs to >= 1 day
+            # api_before : specifically when user searches trips in a particular day
+            # **difference between start date and end date, date needs to >= 1 day
             api_before = end_date + timedelta(days=1)
-            
-            params={
-                'before' : api_before,
-                'after' : start_date
+
+            params = {
+                'before': api_before,
+                'after': start_date
             }
 
             d_logger.info('Control number is not there')
             d_logger.info(start_date)
-            control_number = 120
+            control_number = 100 + state.pagination_value
 
         else:
-            
             params = {}
             d_logger.info('control number is there')
             control_number = state.limit_to_latest
-        
-        request_url = f"/v2/fleets/{state.fleet_id}/trips"
 
         driver_id_list = []
 
         if state.chosen_driver:
+            request_url = f"/v2/fleets/{state.fleet_id}/trips"
             for driver in state.chosen_driver:
                 driver_id_list.append(driver.get('driverId', ''))
             params = {**params, 'driverId': ','.join(driver_id_list)}
-            
+
             response = fetch_all_trips(
                 url=request_url, base_params=params,
-                skip=0, control_number=control_number)
-                
+                skip=state.pagination_value, control_number=control_number)
+
+            all_trips = response
+
+        elif state.chosen_asset_id:
+            request_url = f"/v2/fleets/{state.fleet_id}/latest-trips-by-asset-id"
+
+            response = fetch_trips_by_asset(
+                url=request_url, assets=state.chosen_asset_id
+            )
+
             all_trips = response
 
         else:
+            request_url = f"/v2/fleets/{state.fleet_id}/trips"
             response = fetch_all_trips(
                 url=request_url, base_params=params,
-                skip=0, control_number=control_number)
+                skip=state.pagination_value, control_number=control_number)
             
             all_trips = response
 
@@ -294,7 +303,12 @@ def fetch_trips_with_expiry(state: AgentState):
         d_logger.info(f'API Fetched trips : {enriched[:1]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
-        return {'all_trips': enriched, 'first_query': True}
+        
+        if state.pagination_value > 0:
+            trips = state.all_trips
+            enriched = trips + enriched
+
+        return {'all_trips': enriched, 'first_query': True, 'pagination_value' :0}
 
     except GraphInterrupt:
         raise
@@ -377,10 +391,13 @@ def show_results(state: AgentState):
         text = msg.get('text')
         trip_hint = msg.get('tripId')
         active_filters = msg.get('activeFilters')
+        pagination_value = msg.get('pagination') or 0  ## will give the skip value for the trips
+
     else:
         text = msg
         trip_hint = None
         active_filters = None
+        pagination_value = 0
 
     updates = {'user_response': text, 'needs_refetch': False, 'error' : None}
 
@@ -398,9 +415,17 @@ def show_results(state: AgentState):
             end_time=active_filters['date_range']['end']
         ) if active_filters.get('date_range') else None
 
+    updates['pagination_value'] = pagination_value
     updates['results_shown'] = True
 
     return updates
+
+
+# Check if user has asked to load more trips
+def check_pagination(state: AgentState):
+    if state.pagination_value != 0:
+        return 'FETCH'
+    return 'CONTINUE'
 
 
 class ExtractedFilters1(BaseModel):
@@ -504,20 +529,29 @@ def extract_dvr_intent(state: AgentState):
 
         # intent == 'dvr_request'
         trip = None
-        if state.selected_trip_hint:
-            # selected_trip_hint is an explicit, unambiguous selection (user
-            # clicked "Use trip" on a specific row) - look it up against the
-            # full trip set, not the currently active filter scope, since a
-            # newly picked trip may fall outside filters left over from a
-            # previous turn in this thread.
+        # selected_trip_hint and chosen_trip_id are both explicit, unambiguous
+        # selections (user clicked "Use trip" on a specific row - via a
+        # resume_graph reply while an interrupt is active, or via an
+        # autocomplete_result "Trips" selection on a fresh invoke once the
+        # graph has already reached END). Prefer either of these deterministic
+        # ids over the LLM-parsed response.trip_id fallback below, and look
+        # them up against the full trip set rather than the currently active
+        # filter scope, since a newly picked trip may fall outside filters
+        # left over from a previous turn in this thread.
+        explicit_trip_id = state.selected_trip_hint or state.chosen_trip_id
+        if explicit_trip_id:
             trip = next(
                 (t for t in (state.all_trips or [])
-                 if t['tripId'] == state.selected_trip_hint),
+                 if t['tripId'] == explicit_trip_id),
                 None
             )
         if not trip and response.trip_id:
+            # Same reasoning as selected_trip_hint above: an explicit trip id
+            # parsed out of the message (e.g. a "[Trip: ...]" tag) is
+            # unambiguous and shouldn't be constrained to the currently
+            # active filter scope.
             trip = next(
-                (t for t in trips
+                (t for t in (state.all_trips or [])
                  if t['tripId'] == response.trip_id
                  or response.trip_id in t['tripId']),
                 None
@@ -570,7 +604,8 @@ def extract_dvr_intent(state: AgentState):
                     f"Please give a time within the trip, or pick a different trip."
                 ),
                 'dvr_request_params': None,
-                'selected_trip_hint': None
+                'selected_trip_hint': None,
+                'chosen_trip_id': None
             }
 
         clip_start = max(trip_start, min(clip_start_raw, trip_end))
@@ -592,7 +627,8 @@ def extract_dvr_intent(state: AgentState):
                     f"Please give a shorter time window."
                 ),
                 'dvr_request_params': None,
-                'selected_trip_hint': None
+                'selected_trip_hint': None,
+                'chosen_trip_id': None
             }
 
         params = {
@@ -607,6 +643,7 @@ def extract_dvr_intent(state: AgentState):
         return {
             'dvr_request_params': params,
             'selected_trip_hint': None,
+            'chosen_trip_id': None,
             # Clear any leftover result from a previously completed request in
             # this thread so the UI doesn't show trip A's summary/upload id
             # while trip B's request is still pending confirmation.
@@ -782,11 +819,9 @@ def create_graph():
     g.add_node("Submit_DVR", submit_dvr_request)
 
     g.add_conditional_edges(START, start_check, {
-        'EXTRACT_DVR' : "Extract_DVR_Intent",
-        'EXTRACT_FILTERS' : "Extract_Filters"
+        'EXTRACT_DVR': "Extract_DVR_Intent",
+        'EXTRACT_FILTERS': "Extract_Filters"
     })
-
-    g.add_edge(START, "Extract_Filters")
 
     g.add_conditional_edges("Extract_Filters", check_timestamp, {
         'ask_timestamp': "Ask_Timestamp",
@@ -798,9 +833,12 @@ def create_graph():
     g.add_conditional_edges("Check_Trips", check_trips, {
         "fetch_again": 'Fetch_Trips',
         "show results": 'Show_Results'
+    }) 
+    
+    g.add_conditional_edges("Show_Results", check_pagination, {
+        'CONTINUE': "Extract_DVR_Intent",
+        'FETCH': 'Fetch_Trips'
     })
-
-    g.add_edge("Show_Results", "Extract_DVR_Intent")
 
     g.add_conditional_edges("Confirm_DVR", route_confirm, {
         'submit': "Submit_DVR",
