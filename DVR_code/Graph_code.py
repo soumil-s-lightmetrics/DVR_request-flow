@@ -391,13 +391,13 @@ def show_results(state: AgentState):
         text = msg.get('text')
         trip_hint = msg.get('tripId')
         active_filters = msg.get('activeFilters')
-        pagination_value = msg.get('pagination', None)  ## will give the skip value for the trips
-        
+        pagination_value = msg.get('pagination') or 0  ## will give the skip value for the trips
+
     else:
         text = msg
         trip_hint = None
         active_filters = None
-        pagination_value = None
+        pagination_value = 0
 
     updates = {'user_response': text, 'needs_refetch': False, 'error' : None}
 
@@ -420,9 +420,10 @@ def show_results(state: AgentState):
 
     return updates
 
+
 # Check if user has asked to load more trips
 def check_pagination(state: AgentState):
-    if state.pagination_value:
+    if state.pagination_value != 0:
         return 'FETCH'
     return 'CONTINUE'
 
