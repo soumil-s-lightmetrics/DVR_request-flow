@@ -53,3 +53,5 @@ class AgentState(BaseModel):
     all_trips: list | None = []
     filter_trips: list | None = []
     limit_to_latest: int | None = None
+
+    pagination_value: int | None = 0

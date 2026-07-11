@@ -18,7 +18,7 @@ def fetch_all_trips(
         control_number: int):
 
     all_trips = []
-    limit = 50
+    limit = 200
 
     while skip < control_number:
 
@@ -63,6 +63,40 @@ def fetch_all_trips(
 
     d_logger.info(f"Total trips fetched: {len(all_trips)}")
     return all_trips
+
+
+@traceable(run_type='tool')
+def fetch_trips_by_asset(
+    url: str,
+    assets: list[str]):
+
+    d_logger.info("Fetching trips by asset")
+    skip = 0
+    all_trips = []
+
+    for asset in assets:
+        params = {
+            'sort': 'desc',
+            'limit': 500,
+            'skip': skip,
+            'assetId': str(asset)}
+
+        try:
+            data = auth_manager.make_api_request(
+                client_id = os.getenv('CLIENT_ID'),
+                endpoint = url,
+                params = params
+            )
+            trips = data.get('rows', [])
+
+            all_trips.extend(trips)
+
+        except Exception as e:
+            d_logger.error(f"Failed to parse JSON response: {e}")
+            break
+
+    return all_trips
+
 
 @traceable(run_type='tool')
 def fetch_all_drivers(
