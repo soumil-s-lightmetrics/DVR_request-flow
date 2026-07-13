@@ -1493,6 +1493,35 @@ Example queries:
 14. "Get a side-by-side clip from 11:00 to 11:02" — footage + explicit start AND end time
 15. "Pull up the footage right before the swerve" — footage tied to an incident moment
 
+Also if the intent is classified as dvr_request also retrieve the duration of the dvr/timelapse : 
+1. Get a timelapse clip of 30 minutes from 13:02
+DVR_Start: 13:02
+DVR_End: 13:32
+
+2. Get a DVR clip from 09:15 - 09:17
+DVR_Start: 09:15
+DVR_End: 09:17
+
+3. Get a timelapse clip of 45 minutes from 10:00
+DVR_Start: 10:00
+DVR_End: 10:45
+
+4. Get a DVR clip of 3 minutes from 14:27
+DVR_Start: 14:27
+DVR_End: 14:30
+
+5. Get a timelapse clip from 07:30 - 08:30
+DVR_Start: 07:30
+DVR_End: 08:30
+
+6. Get a DVR clip of 1 minute from 18:42 - 18:43
+DVR_Start: 18:42
+DVR_End: 18:43
+
+7. Get a timelapse clip of 20 minutes from 16:10 - 16:30
+DVR_Start: 16:10
+DVR_End: 16:30
+
 ═══════════════════════════════════════════════════════════════════════════
 2. 'show_trips'
 ═══════════════════════════════════════════════════════════════════════════
@@ -1584,7 +1613,7 @@ how the sentence is phrased.
 
 driver_name / asset_id fields (apply only when intent is dvr_request):
 - Some dvr_request messages identify which trip they mean by naming a driver and/or
-  asset directly in the message itself, e.g. "DVR clip of trip by driver James Miller
+  asset directly in the message itself, e.g. "_clip of trip by driver James Miller
   13:38-13:40" or "get me a clip for asset010". Set driver_name and/or asset_id to
   exactly what's named in THIS message when this happens.
 - Leave both unset when the message doesn't name a driver/asset itself and instead
