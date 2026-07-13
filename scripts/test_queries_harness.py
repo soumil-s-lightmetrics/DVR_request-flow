@@ -241,7 +241,7 @@ def run_query(section, idx, query_spec):
                 if imsg == "show_results":
                     trips = payload.get("trips", [])
                     verdict = "PASS"
-                    evidence = f"{len(trips)} trip(s) shown; summary={payload.get('summary','')[:120]!r}"
+                    evidence = f"{len(trips)} trip(s) shown; summary={(payload.get('summary') or '')[:120]!r}"
                     break
                 if imsg == "confirm_dvr":
                     ws.send(json.dumps({

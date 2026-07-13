@@ -550,6 +550,8 @@ class DvrIntent(BaseModel):
     trip_id: str | None = None
     start_time: str | None = None
     end_time: str | None = None
+    DVR_Start : str | None = None
+    DVR_End : str | None = None
     # Set when a dvr_request doesn't name a specific trip but instead picks
     # one out by event volume/ranking, e.g. "clip for the trip with the most
     # events" -> 'max', "...fewest events" -> 'min'. None otherwise.
@@ -600,6 +602,7 @@ def extract_dvr_intent(state: AgentState):
             HumanMessage(content=text),
             SystemMessage(content=system)
         ])
+
         d_logger.info(f"DEBUG Extract_DVR_Intent classified intent={response.intent!r} full={response}")
 
         # The parameters from the second query will be merged with the new parameters
@@ -752,9 +755,10 @@ def extract_dvr_intent(state: AgentState):
                 return fallback
 
         max_minutes = 3 if (response.dvr_type or 'clip') == 'clip' else 60
-        clip_start_raw = parse_time(response.start_time, trip_start)
+
+        clip_start_raw = parse_time(response.DVR_Start, trip_start)
         clip_end_raw = parse_time(
-            response.end_time,
+            response.DVR_End,
             clip_start_raw + timedelta(minutes=max_minutes)
         )
 
@@ -780,6 +784,7 @@ def extract_dvr_intent(state: AgentState):
             clip_start, clip_end = trip_start, trip_end
 
         requested_minutes = (clip_end - clip_start).total_seconds() / 60
+
         if requested_minutes > max_minutes:
             kind = (
                 'DVR clip' if (response.dvr_type or 'clip') == 'clip'
@@ -789,7 +794,7 @@ def extract_dvr_intent(state: AgentState):
                 'chat_response': (
                     f"That's about {round(requested_minutes)} minutes — "
                     f"a {kind} can be at most {max_minutes} minutes. "
-                    f"Please give a shorter time window."
+                    f"Please give a shorter time window. "
                 ),
                 'dvr_request_params': None,
                 'selected_trip_hint': None,
