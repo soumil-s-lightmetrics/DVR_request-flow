@@ -157,7 +157,11 @@ def extract_filters(state: AgentState):
             'chosen_timestamp': chosen_timestamp,
             'chosen_events_count': chosen_events_count, # for queries like : 'trips with maximum/minimum/most events'
             'limit_to_latest': limit_to_latest,
-            'results_shown': False
+            'results_shown': False,
+            # Clear any stale message from an earlier turn (e.g. "Please click
+            # Use trip...", "DVR request cancelled.") so it doesn't leak into
+            # the next interrupt this thread hits.
+            'chat_response': None
 
         }
     except DVRException:
@@ -364,7 +368,13 @@ def fetch_trips_with_expiry(state: AgentState):
             trips = state.all_trips
             enriched = trips + enriched
 
-        return {'all_trips': enriched, 'first_query': True, 'pagination_value': 0}
+        return {
+            'all_trips': enriched, 'first_query': True, 'pagination_value': 0,
+            # Clear any stale message from an earlier turn so it doesn't get
+            # re-sent as a "more" bubble the next time this thread hits an
+            # interrupt (e.g. the upcoming Show_Results).
+            'chat_response': None
+        }
 
     except GraphInterrupt:
         raise
@@ -397,6 +407,15 @@ def check_trips(state: AgentState):
 def check_trips_node(state: AgentState):
     d_logger.info('Entering node: Check_Trips')
     return {'first_query': False}
+
+
+# START routes here when the user just wants the already-fetched trips
+# re-shown, bypassing Extract_Filters/Fetch_Trips entirely - so it's the only
+# path into Show_Results with no earlier node to clear a stale chat_response
+# (e.g. "Please click Use trip...", "DVR request cancelled.") left over from
+# an earlier turn in this thread.
+def clear_stale_message(state: AgentState):
+    return {'chat_response': None}
 
 # Showing all the thus filtered trips
 
@@ -470,7 +489,7 @@ def show_results(state: AgentState):
         active_filters = None
         pagination_value = 0
 
-    updates = {'user_response': text, 'needs_refetch': False, 'error' : None}
+    updates = {'user_response': text, 'needs_refetch': False, 'error' : None, 'chat_response': None}
 
     if trip_hint:
         updates['selected_trip_hint'] = trip_hint
@@ -822,6 +841,10 @@ def extract_dvr_intent(state: AgentState):
             # while trip B's request is still pending confirmation.
             'dvr_summary': None,
             'uploadRequestId': None,
+            # Clear any stale message from an earlier turn (e.g. "Please click
+            # Use trip...", "DVR request cancelled.") so it doesn't keep getting
+            # re-sent as a "more" bubble on every future interrupt in this thread.
+            'chat_response': None,
             'dvr_confirmed': None
         }
 
@@ -883,7 +906,7 @@ def confirm_dvr(state: AgentState):
             start_dt + timedelta(minutes=response['durationMinutes'])
         ).isoformat()
 
-    return {'dvr_confirmed': True, 'dvr_request_params': updated}
+    return {'dvr_confirmed': True, 'dvr_request_params': updated, 'chat_response': None}
 
 
 def route_confirm(state: AgentState):
@@ -946,7 +969,8 @@ def submit_dvr_request(state: AgentState):
                 'uploadRequestId': result.get('uploadRequestId'),
                 'dvr_summary': dvr_summary,
                 'dvr_confirmed': None,
-                'dvr_request_params': None
+                'dvr_request_params': None,
+                'chat_response': None
             }
 
         except (DVRException, requests.exceptions.RequestException) as e:
@@ -967,7 +991,8 @@ def submit_dvr_request(state: AgentState):
                 'uploadRequestId': fake_id,
                 'dvr_summary': dvr_summary,
                 'dvr_confirmed': None,
-                'dvr_request_params': None
+                'dvr_request_params': None,
+                'chat_response': None
             }
 
     except GraphInterrupt:
@@ -993,12 +1018,14 @@ def create_graph():
     g.add_node("Extract_DVR_Intent", extract_dvr_intent)
     g.add_node("Confirm_DVR", confirm_dvr)
     g.add_node("Submit_DVR", submit_dvr_request)
+    g.add_node("Clear_Stale_Message", clear_stale_message)
 
     g.add_conditional_edges(START, start_check, {
         'EXTRACT_DVR': "Extract_DVR_Intent",
         'EXTRACT_FILTERS': "Extract_Filters",
-        'SHOW_RESULTS': "Show_Results"
+        'SHOW_RESULTS': "Clear_Stale_Message"
     })
+    g.add_edge("Clear_Stale_Message", "Show_Results")
 
     g.add_conditional_edges("Extract_Filters", check_timestamp, {
         'ask_timestamp': "Ask_Timestamp",
