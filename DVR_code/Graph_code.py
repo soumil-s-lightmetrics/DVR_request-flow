@@ -108,7 +108,7 @@ def extract_filters(state: AgentState):
         )
         llm_response = structured_llm.invoke([
             HumanMessage(content=state.query or state.user_response or ''),
-            HumanMessage(content=active_filters),
+            SystemMessage(content=f"Filters already active: {active_filters}"),
             SystemMessage(
                 content=merge_query.replace(
                     "{current_datetime}", datetime.now().isoformat()
@@ -116,26 +116,47 @@ def extract_filters(state: AgentState):
             )
         ])
 
-        d_logger.info(f"Extracted info from query : {llm_response}")
 
         if llm_response.driver_name:
             # Matching extracted driver_names from user_query to the fleet's list of drivers
             matching_drivers_list = resolve_driver_matches(
                 state.fleet_id, llm_response.driver_name)
         else:
-            matching_drivers_list = []
+            # no driver mentioned in this turn - keep whatever was already
+            # carried over from a previous node (e.g. Extract_DVR_Intent)
+            matching_drivers_list = state.chosen_driver
+
+        chosen_asset_id = llm_response.asset_id or state.chosen_asset_id
+        chosen_trip_id = llm_response.trip_id or state.chosen_trip_id
+        chosen_event = llm_response.event_type or state.chosen_event
+
+        if llm_response.start_time and llm_response.end_time:
+            chosen_timestamp = Timestamp(
+                start_time=llm_response.start_time,
+                end_time=llm_response.end_time
+            )
+        else:
+            chosen_timestamp = state.chosen_timestamp
+
+        chosen_events_count = (
+            llm_response.events
+            if llm_response.events is not None
+            else state.chosen_events_count
+        )
+        limit_to_latest = (
+            llm_response.limit_to_latest
+            if llm_response.limit_to_latest is not None
+            else state.limit_to_latest
+        )
 
         return {
             'chosen_driver': matching_drivers_list,
-            'chosen_asset_id': llm_response.asset_id,
-            'chosen_trip_id': llm_response.trip_id,
-            'chosen_event': llm_response.event_type,
-            'chosen_timestamp': Timestamp(
-                start_time=llm_response.start_time,
-                end_time=llm_response.end_time
-            ) if llm_response.start_time and llm_response.end_time else None,
-            'chosen_events_count': llm_response.events, # for queries like : 'trips with maximum/minimum/most events'
-            'limit_to_latest': llm_response.limit_to_latest,
+            'chosen_asset_id': chosen_asset_id,
+            'chosen_trip_id': chosen_trip_id,
+            'chosen_event': chosen_event,
+            'chosen_timestamp': chosen_timestamp,
+            'chosen_events_count': chosen_events_count, # for queries like : 'trips with maximum/minimum/most events'
+            'limit_to_latest': limit_to_latest,
             'results_shown': False
 
         }
@@ -327,7 +348,6 @@ def fetch_trips_with_expiry(state: AgentState):
 # Filtering on the base of the number of the events if specifically mentioned in the user's query
         if enriched:
             event_filter = state.chosen_events_count
-            d_logger.info(f"Event Count {event_filter}")
 
             if event_filter == 'max':
                 max_count = max(trip['totalEvents'] for trip in enriched)
@@ -337,8 +357,6 @@ def fetch_trips_with_expiry(state: AgentState):
                 enriched = [t for t in enriched if t['totalEvents'] == min_count]
             elif isinstance(event_filter, int):
                 enriched = [t for t in enriched if t['totalEvents'] == event_filter]
-
-        d_logger.info(f'API Fetched trips : {enriched[:1]}')
 
         enriched.sort(key=lambda t: t.get('startTimeUTC', ''), reverse=True)
         
