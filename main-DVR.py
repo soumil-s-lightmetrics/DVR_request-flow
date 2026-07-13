@@ -200,6 +200,11 @@ def chat_socket(ws):
             thread_id = payload.get("thread_id")
             config = {"configurable": {"thread_id": thread_id}}
             ws_logger.info(f"ws message: {msg_type} | thread: {thread_id}")
+            # DEBUG: log the full incoming payload (minus noisy fleet_data) so we
+            # can see exactly what shape the frontend actually sent, not just the
+            # message type - needed to diagnose client/backend contract mismatches.
+            _debug_payload = {k: v for k, v in payload.items() if k != "fleet_data"}
+            ws_logger.info(f"DEBUG raw payload: {json.dumps(_debug_payload, default=str)}")
 
             try:
                 if msg_type == "load_data":
@@ -294,20 +299,33 @@ def chat_socket(ws):
                             "driverName": item["driverName"]
                         }]
                     elif option == "Assets":
-                        state["chosen_asset_id"] = (
-                            [item] if isinstance(item, str)
-                            else [item.get("assetId")]
-                        )
+                        raw_asset = item if isinstance(item, str) else item.get("assetId")
+                        # Defensive: chosen_asset_id must be list[str] | None. If the
+                        # client ever echoes the backend's own chosen_asset_id (already
+                        # a list) back as assetId instead of a single string, flatten it
+                        # instead of double-wrapping - a stray list-of-a-list here
+                        # permanently breaks this thread (every future graph.invoke()
+                        # re-validates the full checkpoint against AgentState before any
+                        # node runs, so one bad write here bricks the thread for good).
+                        if isinstance(raw_asset, list):
+                            state["chosen_asset_id"] = [a for a in raw_asset if isinstance(a, str)]
+                        elif isinstance(raw_asset, str):
+                            state["chosen_asset_id"] = [raw_asset]
+                        else:
+                            state["chosen_asset_id"] = []
                     elif option == "Trips":
                         state["chosen_trip_id"] = (
                             item if isinstance(item, str)
                             else item.get("tripId")
                         )
                     elif option == "Event Types":
-                        state["chosen_event"] = (
-                            [item] if isinstance(item, str)
-                            else [item.get("event_type")]
-                        )
+                        raw_event = item if isinstance(item, str) else item.get("event_type")
+                        if isinstance(raw_event, list):
+                            state["chosen_event"] = [e for e in raw_event if isinstance(e, str)]
+                        elif isinstance(raw_event, str):
+                            state["chosen_event"] = [raw_event]
+                        else:
+                            state["chosen_event"] = []
                     else:
                         ws_logger.warning(
                             f"Unknown autocomplete_result option: {option}"
@@ -344,10 +362,15 @@ def chat_socket(ws):
                         # (where user_response is otherwise set) via the
                         # start_check shortcut at START.
                         "user_response": query,
-                        "fleet_id":      fleet_data.get("fleet_id"),
                         "drivers":       fleet_data.get("driver_objects", []),
                         "query_type":    "simple_query"
                     }
+                    # Only set fleet_id if we actually have one for this connection -
+                    # omitting it (rather than passing None) avoids clobbering a
+                    # fleet_id already saved in the checkpoint from before a reconnect
+                    # (e.g. a query arriving before load_data on a fresh socket).
+                    if fleet_data.get("fleet_id"):
+                        state["fleet_id"] = fleet_data["fleet_id"]
 
                     _invoke_graph(ws, graph, state, config)
 
@@ -421,4 +444,5 @@ def _handle_result(ws, result: dict):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug)

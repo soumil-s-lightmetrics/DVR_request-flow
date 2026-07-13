@@ -553,7 +553,7 @@ function buildActiveFilters(){
 function applyBackendFilterChips(filters){
   currentAcState.collectedItems=[];
   if(filters.driver)currentAcState.collectedItems.push({option:'Drivers',selectedItem:{driverId:filters.driver.driverId,driverName:filters.driver.driverName}});
-  if(filters.asset)currentAcState.collectedItems.push({option:'Assets',selectedItem:{assetId:filters.asset}});
+  if(filters.asset&&filters.asset.length)currentAcState.collectedItems.push({option:'Assets',selectedItem:{assetId:Array.isArray(filters.asset)?filters.asset[0]:filters.asset}});
   if(filters.events&&filters.events.length)filters.events.forEach(ev=>currentAcState.collectedItems.push({option:'Event Types',selectedItem:{event_type:ev}}));
   // FIGMA: guard against invalid/epoch timestamps from the backend so a bogus
   // "1 January 1970" chip never renders — only build the chip when both
@@ -580,7 +580,7 @@ else if(e.key==='ArrowUp'){e.preventDefault();currentAcState.focusIdx=Math.max(c
 else if(e.key==='Enter'){e.preventDefault();currentAcState.focusIdx>=0?items[currentAcState.focusIdx].click():(iid==='main-input'?landingSend():chatSend())}
 else if(e.key==='Escape')closeAc()}else{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();iid==='main-input'?landingSend():chatSend()}}}
 
-function buildTagCtx(){return currentAcState.collectedItems.filter(e=>e.option!=='DateRange').map(e=>{if(e.option==='Drivers')return`[Driver: ${e.selectedItem.driverName||e.selectedItem.driverId}]`;if(e.option==='Assets')return`[Asset: ${e.selectedItem.assetId}]`;if(e.option==='Trips')return`[Trip: ${e.selectedItem.tripId}]`;if(e.option==='Event Types')return`[Event: ${e.selectedItem.event_type}]`;return''}).filter(Boolean).join(' ')}
+function buildTagCtx(){return currentAcState.collectedItems.map(e=>{if(e.option==='Drivers')return`[Driver: ${e.selectedItem.driverName||e.selectedItem.driverId}]`;if(e.option==='Assets')return`[Asset: ${e.selectedItem.assetId}]`;if(e.option==='Trips')return`[Trip: ${e.selectedItem.tripId}]`;if(e.option==='Event Types')return`[Event: ${e.selectedItem.event_type}]`;if(e.option==='DateRange')return`[DateRange: ${e.selectedItem.start} to ${e.selectedItem.end}]`;return''}).filter(Boolean).join(' ')}
 
 function landingSend(){const inp=document.getElementById('main-input');const text=inp.value.trim();const tc=buildTagCtx();const fq=(tc?tc+' ':'')+text;if(!fq.trim())return;
 closeAc();inp.value='';showChat();appendUser(fq);storeMsg('user',fq);showTyping();dispatch(fq)}
