@@ -1493,7 +1493,7 @@ Example queries:
 14. "Get a side-by-side clip from 11:00 to 11:02" — footage + explicit start AND end time
 15. "Pull up the footage right before the swerve" — footage tied to an incident moment
 
-Also if the intent is classified as dvr_request also retrieve the duration of the dvr/timelapse : 
+Also if the intent is classified as dvr_request also retrieve the DVR_Start and DVR_End for the dvr/timelapse : 
 1. Get a timelapse clip of 30 minutes from 13:02
 DVR_Start: 13:02
 DVR_End: 13:32
