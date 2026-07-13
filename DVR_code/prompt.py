@@ -1582,6 +1582,28 @@ shown as-is ('general_question'). Compare the criteria in the message against "F
 currently active" above — if something new is being introduced, it's 'show_trips' no matter
 how the sentence is phrased.
 
+driver_name / asset_id fields (apply only when intent is dvr_request):
+- Some dvr_request messages identify which trip they mean by naming a driver and/or
+  asset directly in the message itself, e.g. "DVR clip of trip by driver James Miller
+  13:38-13:40" or "get me a clip for asset010". Set driver_name and/or asset_id to
+  exactly what's named in THIS message when this happens.
+- Leave both unset when the message doesn't name a driver/asset itself and instead
+  relies on some other way of identifying the trip (an explicit trip_id, "this trip",
+  the only trip currently shown, or the events field above).
+- This is about a driver/asset named IN THIS SPECIFIC MESSAGE to disambiguate which
+  trip the clip is for - do not carry forward a driver/asset from "Filters currently
+  active" unless the message repeats it.
+
+events field (apply only when intent is dvr_request):
+- Some dvr_request messages don't name a specific trip directly, but instead pick one
+  out by event volume/ranking within the trips currently shown - e.g. "get me a clip of
+  the trip with the most events", "timelapse for the trip with the fewest violations",
+  "clip the riskiest trip". Set events = 'max' for most/highest/riskiest phrasing, or
+  events = 'min' for fewest/least/safest phrasing.
+- Leave events unset when the message already identifies the trip another way (an
+  explicit trip_id, "this trip", the only trip currently shown, etc.) or doesn't
+  reference event count/ranking at all.
+
 Time extraction rules for dvr_request (apply only when intent is dvr_request):
 - EXACT phrasing ("from X", "at X", "starting at X") → return X as start_time, with
   NO adjustment.
