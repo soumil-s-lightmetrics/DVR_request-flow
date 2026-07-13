@@ -42,7 +42,6 @@ def fetch_all_trips(
 
         trips = data.get('rows', [])
 
-        d_logger.info(f'Fetched Trips : {trips[:2]}')
 
         if not trips:
             d_logger.info(
