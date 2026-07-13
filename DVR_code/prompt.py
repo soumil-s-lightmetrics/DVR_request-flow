@@ -791,19 +791,29 @@ General notes:
      per the rules above.
 Time Window Adjustment Rules
 
-* When a specific time or time range is mentioned, expand the requested time window:
+These two cases are mutually exclusive - check which one applies BEFORE computing
+anything, based on whether the query gives ONE time or TWO:
 
-  * Subtract 2 minutes and 30 seconds from start_time.
-  * Add 2 minutes and 30 seconds to end_time.
-* This adjustment is intended to capture footage or events occurring immediately before and after the requested time.
-* If only a single timestamp is provided:
+* CASE A - a time RANGE is given (both a start time and an end time are explicitly
+  stated, e.g. "between 10:00 and 10:15", "from 9:00 to 9:30"):
+  * start_time = given start time - 2 minutes 30 seconds
+  * end_time   = given end time + 2 minutes 30 seconds
+  * This symmetric ±2m30s padding is ONLY for this two-sided case - do not use it
+    when only one time is given (that's Case B below).
 
-  * if start time is given and end time is not 
-  * start_time = timestamp - 2 minutes 30 seconds
-  * end_time = start time + 10 minutes
+* CASE B - only a SINGLE timestamp is given, with no explicit end time (e.g. "around
+  5PM", "at 9:30", "footage from 10:15" with nothing else):
+  * start_time = given time - 2 minutes 30 seconds
+  * end_time   = start_time (the already-adjusted value above) + 10 minutes
+  * Do NOT subtract 2m30s from both ends symmetrically here - that is Case A's rule
+    and does not apply when there is only one timestamp in the query.
+  * Example: "around 5PM" -> start_time = 16:57:30, end_time = 17:07:30 (16:57:30 +
+    10 minutes) - NOT 17:02:30.
 
+* This adjustment is intended to capture footage or events occurring immediately
+  before and after the requested time.
 * Apply this adjustment only when a specific time is mentioned.
-* Do not apply this adjustment when only dates are provided.
+* Do not apply this adjustment when only dates are provided (no clock time at all).
 
 DECIDING WHETHER THIS IS A REFINEMENT OR A FRESH LOOKUP
 

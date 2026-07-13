@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from dotenv import load_dotenv
@@ -348,6 +348,27 @@ def fetch_trips_with_expiry(state: AgentState):
                 'events': events,
                 'totalEvents': len(events)
             })
+
+# The API only takes whole-date before/after bounds, so a request for a specific
+# time window (e.g. "around 5PM" -> 16:57:30-17:07:30) still comes back with every
+# trip from the whole day(s). Narrow down to the actual requested start/end time
+# here using each trip's real startTimeUTC. Skipped for limit_to_latest queries
+# (no chosen_timestamp window is used for those) and harmless for whole-day
+# queries, since their start/end already span 00:00:00-23:59:59.
+        if not state.limit_to_latest and state.chosen_timestamp:
+            def _to_aware_utc(val):
+                dt = datetime.fromisoformat(val.replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+
+            window_start = _to_aware_utc(state.chosen_timestamp.start_time)
+            window_end = _to_aware_utc(state.chosen_timestamp.end_time)
+            enriched = [
+                t for t in enriched
+                if t.get('startTimeUTC')
+                and window_start <= _to_aware_utc(t['startTimeUTC']) <= window_end
+            ]
 
 # Filtering on the base of the number of the events if specifically mentioned in the user's query
         if enriched:
@@ -754,7 +775,11 @@ def extract_dvr_intent(state: AgentState):
         )
         trip_end = (
             datetime.fromisoformat(trip['endTimeUTC'].replace('Z', '+00:00'))
-            if trip['endTimeUTC'] else trip_start
+            # An ongoing trip (no endTimeUTC yet) has no fixed end - treat "now"
+            # as the upper bound instead of collapsing to trip_start, which
+            # would make every requested clip time fail the range check below
+            # (a zero-length window can never contain any other instant).
+            if trip['endTimeUTC'] else datetime.now(timezone.utc)
         )
 
         def parse_time(val, fallback):
