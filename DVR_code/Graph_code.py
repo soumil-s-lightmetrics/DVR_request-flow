@@ -550,6 +550,16 @@ class DvrIntent(BaseModel):
     trip_id: str | None = None
     start_time: str | None = None
     end_time: str | None = None
+    # Set when a dvr_request doesn't name a specific trip but instead picks
+    # one out by event volume/ranking, e.g. "clip for the trip with the most
+    # events" -> 'max', "...fewest events" -> 'min'. None otherwise.
+    events: Literal['max', 'min'] | None = None
+    # Set when the message explicitly names a driver and/or asset to identify
+    # which trip the clip/timelapse is for, e.g. "DVR clip of trip by driver
+    # James Miller 13:38-13:40" or "clip for asset010". None when the trip is
+    # identified another way (explicit trip_id, "this trip", only trip shown).
+    driver_name: str | None = None
+    asset_id: str | None = None
 
 
 def extract_dvr_intent(state: AgentState):
@@ -596,6 +606,8 @@ def extract_dvr_intent(state: AgentState):
         if response.intent == 'show_trips':
             d_logger.info('>>> BEFORE merge_filters_from_text call')
             updated_state = merge_filters_from_text(state)
+            updated_state['results_shown'] = False
+
 
             d_logger.info(f"Showing timestamp for the merged state : {updated_state['chosen_timestamp']}")
 
@@ -617,6 +629,7 @@ def extract_dvr_intent(state: AgentState):
                     f'>>> logging updated_state FAILED: {log_err!r}'
                 )
             d_logger.info('>>> RETURNING updated_state now')
+            updated_state['chat_response'] = None
             return updated_state
 
         # In case the user asks a general question about the trips
@@ -635,6 +648,40 @@ def extract_dvr_intent(state: AgentState):
 
         # intent == 'dvr_request'
         trip = None
+        # If THIS message explicitly names a driver and/or asset to identify the
+        # trip (e.g. "DVR clip of trip by driver James Miller 13:38-13:40"), resolve
+        # against that first - it takes priority over a leftover selected_trip_hint/
+        # chosen_trip_id from an earlier turn, since a fresh, explicit driver/asset
+        # mention in the new message is a stronger signal than a stale prior click.
+        if response.driver_name or response.asset_id:
+            candidates = state.all_trips or []
+            if response.driver_name:
+                name = response.driver_name.lower()
+                candidates = [
+                    t for t in candidates
+                    if name in (t.get('driverName') or '').lower()
+                ]
+            if response.asset_id:
+                candidates = [
+                    t for t in candidates
+                    if t.get('assetId') == response.asset_id
+                ]
+            if len(candidates) == 1:
+                trip = candidates[0]
+            elif len(candidates) > 1 and response.start_time:
+                def _time_diff(t):
+                    try:
+                        parsed = datetime.strptime(response.start_time, '%H:%M').time()
+                        trip_dt = datetime.fromisoformat(
+                            t['startTimeUTC'].replace('Z', '+00:00')
+                        )
+                        return abs(
+                            (trip_dt.hour * 60 + trip_dt.minute)
+                            - (parsed.hour * 60 + parsed.minute)
+                        )
+                    except Exception:
+                        return float('inf')
+                trip = min(candidates, key=_time_diff)
         # selected_trip_hint and chosen_trip_id are both explicit, unambiguous
         # selections (user clicked "Use trip" on a specific row - via a
         # resume_graph reply while an interrupt is active, or via an
@@ -645,7 +692,7 @@ def extract_dvr_intent(state: AgentState):
         # filter scope, since a newly picked trip may fall outside filters
         # left over from a previous turn in this thread.
         explicit_trip_id = state.selected_trip_hint or state.chosen_trip_id
-        if explicit_trip_id:
+        if not trip and explicit_trip_id:
             trip = next(
                 (t for t in (state.all_trips or [])
                  if t['tripId'] == explicit_trip_id),
@@ -664,6 +711,11 @@ def extract_dvr_intent(state: AgentState):
             )
         if not trip and len(trips) == 1:
             trip = trips[0]
+        if not trip and response.events and trips:
+            if response.events == 'max':
+                trip = max(trips, key=lambda t: t.get('totalEvents', 0))
+            else:
+                trip = min(trips, key=lambda t: t.get('totalEvents', 0))
         if not trip:
             return {
                 'chat_response': (
