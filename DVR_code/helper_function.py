@@ -114,6 +114,7 @@ class ExtractedFilters1(BaseModel):
     end_time: str | None = None
     limit_to_latest: int | None = None
     events: Literal['max', 'min'] | int | None = None
+    needs_refetch: bool | None = False
 
 @traceable(run_type='tool')
 def merge_filters_from_text(state: AgentState):
@@ -123,6 +124,12 @@ def merge_filters_from_text(state: AgentState):
         structured_llm = llm_for_advance_reasoning.with_structured_output(
             ExtractedFilters1
         )
+        debug_logger.info(
+            f"DEBUG merge_filters_from_text input: "
+            f"user_response={state.user_response!r} "
+            f"active_filters={active_filters_desc}"
+        )
+
         extracted = structured_llm.invoke([
             HumanMessage(content=state.user_response or ''),
             SystemMessage(content=f"current time and date : {datetime.now()}"),
@@ -138,25 +145,15 @@ def merge_filters_from_text(state: AgentState):
         chosen_driver = resolve_driver_matches(state.fleet_id, extracted.driver_name)
         chosen_asset_id = extracted.asset_id
         chosen_event = list(set(extracted.event_type)) if extracted.event_type else []
-        
-        if extracted.start_time and extracted.end_time: 
+
+        if extracted.start_time and extracted.end_time:
             chosen_timestamp = Timestamp(
                 start_time=extracted.start_time,
                 end_time=extracted.end_time)
-        
-        else: 
+        else:
             chosen_timestamp = state.chosen_timestamp
 
         driver_ids = [d['driverId'] for d in (chosen_driver or [])]
-
-        filtered = filter_enriched_trips(
-            state.all_trips or [],
-            driver_ids=driver_ids or None,
-            asset_id=chosen_asset_id,
-            event_list=chosen_event or None,
-            date_start=chosen_timestamp.start_time if chosen_timestamp else None,
-            date_end=chosen_timestamp.end_time if chosen_timestamp else None
-        )
 
         base_updates = {
             'chosen_driver': chosen_driver,
@@ -167,6 +164,25 @@ def merge_filters_from_text(state: AgentState):
             'dvr_request_params': None,
             'limit_to_latest': extracted.limit_to_latest
         }
+
+        if extracted.needs_refetch == True:
+            debug_logger.info(
+                f"DEBUG merge_filters_from_text: needs_refetch=True, "
+                f"skipping local filter. old_driver={state.chosen_driver} "
+                f"new_driver={base_updates['chosen_driver']}"
+            )
+            base_updates['needs_refetch'] = True
+            base_updates['results_shown'] = False
+            return base_updates
+
+        filtered = filter_enriched_trips(
+            state.all_trips or [],
+            driver_ids=driver_ids or None,
+            asset_id=chosen_asset_id,
+            event_list=chosen_event or None,
+            date_start=chosen_timestamp.start_time if chosen_timestamp else None,
+            date_end=chosen_timestamp.end_time if chosen_timestamp else None
+        )
 
         if filtered:
             event_filter = extracted.events
@@ -190,8 +206,14 @@ def merge_filters_from_text(state: AgentState):
             base_updates['needs_refetch'] = True
             base_updates['results_shown'] = False
 
-        debug_logger.info(state.chosen_driver)
-        debug_logger.info(base_updates['chosen_driver'])
+        debug_logger.info(
+            f"DEBUG merge_filters_from_text result: "
+            f"old_driver={state.chosen_driver} -> new_driver={base_updates['chosen_driver']} "
+            f"driver_ids_used={driver_ids} "
+            f"len(all_trips)={len(state.all_trips or [])} "
+            f"len(filtered)={len(base_updates.get('filter_trips', []))} "
+            f"needs_refetch={base_updates.get('needs_refetch')}"
+        )
 
         return base_updates
 

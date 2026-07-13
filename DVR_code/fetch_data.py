@@ -18,10 +18,10 @@ def fetch_all_trips(
         control_number: int):
 
     all_trips = []
-    limit = 200
+    limit = 500
 
     while skip < control_number:
-
+        d_logger.info(f'Fetching {limit} trips after trip number {skip}')
         trip_params = {
             **base_params,
             'key': "startTimeUTC",

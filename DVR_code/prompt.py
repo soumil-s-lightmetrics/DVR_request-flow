@@ -830,6 +830,42 @@ fields the message says nothing about.
 When you judge this is a REFINEMENT, follow the per-field carry-forward and
 union/replace rules exactly as described above.
 
+DECIDING needs_refetch
+
+The system already has a local, in-memory set of trips that was fetched from the
+server using the PREVIOUS active filters ("Filters already active" below). Your
+merged/output filters will first be applied locally against that already-fetched set
+before deciding whether to go back to the server. Set the boolean field
+`needs_refetch` to tell the system whether that local set can be trusted to contain
+every trip matching the NEW merged filters, or whether the server must be queried
+again.
+
+  * Set needs_refetch = False when the new merged filters describe a search that is
+    guaranteed to be a SUBSET of what the previous filters already covered — i.e.
+    every trip matching the new filters would necessarily have already matched the
+    previous filters too, so it must already be present in the previously-fetched
+    set. This is typically true when the new message only NARROWS the search:
+    adding a driver/asset/event constraint on top of the existing ones, or shrinking
+    the date range to fall entirely within the previously active date range.
+
+  * Set needs_refetch = True whenever the new merged filters could describe trips
+    that fall OUTSIDE what the previous filters covered — i.e. it is possible for a
+    matching trip to exist that was never fetched. This includes (non-exhaustively):
+      - The date range is widened, shifted, or extends beyond the previously active
+        date range in either direction (even partially).
+      - There was no previously active date range but the new message introduces one
+        (or vice versa).
+      - The message is judged a FRESH LOOKUP (per the section above), since a fresh
+        lookup is not guaranteed to be a subset of the old search at all.
+      - A driver/asset/event constraint is REMOVED or WIDENED rather than narrowed
+        (e.g. switching from one driver to another, or from a single asset to "all
+        assets"), since that can surface trips the previous fetch excluded.
+      - Any case where you are not confident the new filters are a strict subset of
+        the previously active ones.
+
+  * When genuinely uncertain, prefer needs_refetch = True — it is safer to re-fetch
+    than to silently show an incomplete result set.
+
 General Rules
 
 1. Extract only information explicitly present in the query, or carried forward from
@@ -1561,4 +1597,28 @@ Time extraction rules for dvr_request (apply only when intent is dvr_request):
   Example: "footage from 10:00" → start_time = "10:00", end_time = unset
 - Return times as HH:MM (24-hour) unless a specific date is mentioned, in which case
   return full ISO 8601.
+"""
+
+start_route_query = """
+Trips from an earlier search are already fetched and sitting in memory. Classify the
+manager's new message into exactly one of: 'extract_filters', 'show_results',
+'extract_dvr_intent'.
+
+1. 'extract_filters' — the message is a brand new search: it names criteria (driver,
+   asset, event type, date/time range, "last N trips", etc.) needed to fetch trips from
+   scratch, with no meaningful connection to whatever was last shown.
+   e.g. "show me trips for BUS_101 last week", "trips with harsh braking today"
+
+2. 'show_results' — the message doesn't ask for anything new at all; it just wants the
+   already-fetched trips displayed again (e.g. after a reconnect, or a bare "show them
+   again" / "list the trips").
+   e.g. "show me the trips again", "what were those trips"
+
+3. 'extract_dvr_intent' — everything else: narrowing/refining the trips already shown,
+   asking a question about them, selecting one, or asking for DVR footage/a clip/timelapse.
+   This is the default when the message clearly relates to the trips already on screen.
+   e.g. "only the ones from Sunil", "get me the footage for that trip", "which one had
+   the most events"
+
+Return only the single matching label.
 """

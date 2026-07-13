@@ -177,4 +177,7 @@ class AuthManager:
                     sleep(backoff)  # Exponential backoff
                 else:
                     self.logger.exception(f"API request failed after {retries} attempts: {e}")
+                    resp = getattr(e, "response", None)
+                    if resp is not None:
+                        self.logger.error(f"API error response body: {resp.text}")
                     raise
