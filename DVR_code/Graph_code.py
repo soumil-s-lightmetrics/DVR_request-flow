@@ -415,9 +415,26 @@ def fetch_trips_with_expiry(state: AgentState):
         )
 
 
+def needs_timestamp(state: AgentState):
+    """
+    True if a Fetch_Trips call is about to run with no date range and no
+    limit_to_latest to fall back on - fetch_trips_with_expiry indexes
+    state.chosen_timestamp.start_time/end_time unconditionally in that case
+    and crashes with an AttributeError on None. Both check_trips's
+    "fetch_again" branch and check_pagination's "FETCH" branch can reach
+    Fetch_Trips without ever passing through Extract_Filters/check_timestamp
+    (e.g. after the user clears the date-range filter chip, which sets
+    chosen_timestamp back to None), so they need this same guard.
+    """
+    ts = state.chosen_timestamp
+    return not state.limit_to_latest and not (ts and ts.start_time and ts.end_time)
+
+
 def check_trips(state: AgentState):
     d_logger.info('Checking trip length')
     if len(state.filter_trips or []) == 0:
+        if needs_timestamp(state):
+            return "ask_timestamp"
         return "fetch_again"
     return "show results"
 
@@ -427,7 +444,7 @@ def check_trips(state: AgentState):
 
 def check_trips_node(state: AgentState):
     d_logger.info('Entering node: Check_Trips')
-    return {'first_query': False}
+    return {'first_query': False, 'chat_response': None}
 
 
 # START routes here when the user just wants the already-fetched trips
@@ -569,6 +586,8 @@ def show_results(state: AgentState):
 # Check if user has asked to load more trips
 def check_pagination(state: AgentState):
     if state.pagination_value != 0 or state.needs_refetch:
+        if needs_timestamp(state):
+            return 'ASK_TIMESTAMP'
         return 'FETCH'
     return 'CONTINUE'
 
@@ -888,7 +907,7 @@ def route_after_intent(state: AgentState):
     if state.dvr_request_params:
         return 'confirm'
     if state.needs_refetch:
-        return 'refetch'
+        return 'ask_timestamp' if needs_timestamp(state) else 'refetch'
     return 'loop'
 
 
@@ -1061,12 +1080,14 @@ def create_graph():
 
     g.add_conditional_edges("Check_Trips", check_trips, {
         "fetch_again": 'Fetch_Trips',
+        "ask_timestamp": 'Ask_Timestamp',
         "show results": 'Show_Results'
-    }) 
-    
+    })
+
     g.add_conditional_edges("Show_Results", check_pagination, {
         'CONTINUE': "Extract_DVR_Intent",
-        'FETCH': 'Fetch_Trips'
+        'FETCH': 'Fetch_Trips',
+        'ASK_TIMESTAMP': 'Ask_Timestamp'
     })
 
     g.add_conditional_edges("Confirm_DVR", route_confirm, {
@@ -1076,6 +1097,7 @@ def create_graph():
     g.add_conditional_edges("Extract_DVR_Intent", route_after_intent, {
         'confirm': "Confirm_DVR",
         'refetch': "Fetch_Trips",
+        'ask_timestamp': "Ask_Timestamp",
         'loop': "Check_Trips"
     })
 
