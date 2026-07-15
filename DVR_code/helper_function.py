@@ -1,5 +1,6 @@
 import requests
 import os
+import difflib
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -76,11 +77,68 @@ def filter_enriched_trips(
         result.append(t)
     return result
 
-@traceable(run_type='tool')
-def resolve_driver_matches(fleet_id, driver_names: list):
+# Below this, a typo is treated as "not the driver you meant" rather than
+# silently matched to an unrelated name - typo'd names like "John Smitth" or
+# "Jhon Smith" score >=0.9 against "John Smith", but two different people
+# sharing a surname ("John Smith" vs "Jane Smith") score 0.8, so the cutoff
+# sits above that to avoid merging distinct drivers.
+FUZZY_DRIVER_MATCH_CUTOFF = 0.75
+
+
+def _name_similarity(a: str, b: str) -> float:
     """
-    Searches for driver names in the Fleet's drivers list, 
+    Similarity of two driver names, tolerant of word order and a name typo'd
+    in only one of several tokens (e.g. a missing middle name, or "Rob Lee"
+    for "Robert Lee") - a whole-string ratio alone penalizes those cases
+    just as heavily as an unrelated name, since it diffs the strings
+    character-by-character with no notion of word boundaries.
+    """
+    a_tokens, b_tokens = a.lower().split(), b.lower().split()
+    whole = difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
+    if not a_tokens or not b_tokens:
+        return whole
+
+    def best_avg(tokens_from, tokens_to):
+        return sum(
+            max(difflib.SequenceMatcher(None, t, u).ratio() for u in tokens_to)
+            for t in tokens_from
+        ) / len(tokens_from)
+
+    # min(), not avg(), of the two directions - a token unmatched on either
+    # side (extra token in `a`, or one only `b` has) should drag the score
+    # down rather than being averaged away by the tokens that did match.
+    token_score = min(best_avg(a_tokens, b_tokens), best_avg(b_tokens, a_tokens))
+
+    return max(token_score, whole)
+
+
+def _fuzzy_driver_match(name: str, known_drivers: list):
+    """Best-scoring driver in known_drivers for a typo'd `name`, or None."""
+    best, best_ratio = None, 0.0
+    for d in known_drivers:
+        candidate = d.driverName if hasattr(d, 'driverName') else d.get('driverName')
+        if not candidate:
+            continue
+        ratio = _name_similarity(name, candidate)
+        if ratio > best_ratio:
+            best, best_ratio = d, ratio
+
+    if best is not None and best_ratio >= FUZZY_DRIVER_MATCH_CUTOFF:
+        return best
+    return None
+
+
+@traceable(run_type='tool')
+def resolve_driver_matches(fleet_id, driver_names: list, known_drivers: list = None):
+    """
+    Searches for driver names in the Fleet's drivers list,
     returns a list of dictionary [{'driverId' : driverId, 'driverName' : driverName}]
+
+    The API's `search` param is a substring match, so a typo (e.g. "John
+    Smitth") returns zero rows and the driver would otherwise silently drop
+    out of the request. When that happens, fall back to a fuzzy match
+    against `known_drivers` (the fleet's already-loaded roster, e.g.
+    state.drivers) instead of another API round trip.
     """
     if not driver_names:
         return []
@@ -91,18 +149,60 @@ def resolve_driver_matches(fleet_id, driver_names: list):
     for driver in driver_names:
         params = {'search': driver, 'limit': 50}
         debug_logger.info(params)
-        
+
         data = auth_manager.make_api_request(
             client_id=os.getenv('CLIENT_ID'),
             endpoint=f"/v2/fleets/{fleet_id}/drivers/list",
             params=params
         )
+        rows = data.get('rows', [])
+
+        if not rows and known_drivers:
+            match = _fuzzy_driver_match(driver, known_drivers)
+            if match is not None:
+                driver_id = match.driverId if hasattr(match, 'driverId') else match.get('driverId')
+                driver_name = match.driverName if hasattr(match, 'driverName') else match.get('driverName')
+                debug_logger.info(
+                    f"No exact match for driver {driver!r}; fuzzy-matched to "
+                    f"{driver_name!r} ({driver_id!r})"
+                )
+                driver_matches.append({'driverId': driver_id, 'driverName': driver_name})
+                continue
+
+            # Neither the API search nor the fuzzy match found anyone for
+            # this name - e.g. "Zzyxx Qwerty", or a typo too mangled to
+            # score above FUZZY_DRIVER_MATCH_CUTOFF. Filtering to zero
+            # drivers would make every downstream trip lookup come back
+            # empty, which reads as "no trips" rather than "we couldn't
+            # find that driver". Fall back to the full roster instead, so
+            # the caller still gets trips back (unfiltered by driver) and
+            # the user can be prompted to pick one, rather than a dead end.
+            debug_logger.info(
+                f"No match at all for driver {driver!r}; "
+                f"falling back to full roster ({len(known_drivers)} drivers)"
+            )
+            for d in known_drivers:
+                driver_id = d.driverId if hasattr(d, 'driverId') else d.get('driverId')
+                driver_name = d.driverName if hasattr(d, 'driverName') else d.get('driverName')
+                driver_matches.append({'driverId': driver_id, 'driverName': driver_name})
+            continue
+
         driver_matches.extend([
             {'driverId': d['driverId'], 'driverName': d['driverName']}
-            for d in data.get('rows', [])
+            for d in rows
         ])
 
-    return driver_matches
+    # De-dupe by driverId - e.g. two unresolved names in the same request
+    # would each fall back to the full roster above and double it up.
+    seen = set()
+    deduped = []
+    for d in driver_matches:
+        if d['driverId'] in seen:
+            continue
+        seen.add(d['driverId'])
+        deduped.append(d)
+
+    return deduped
 
 
 class ExtractedFilters1(BaseModel):
@@ -142,7 +242,8 @@ def merge_filters_from_text(state: AgentState):
             f'narrow-down extraction: {extracted}'
         )
 
-        chosen_driver = resolve_driver_matches(state.fleet_id, extracted.driver_name)
+        chosen_driver = resolve_driver_matches(
+            state.fleet_id, extracted.driver_name, known_drivers=state.drivers)
         chosen_asset_id = extracted.asset_id
         chosen_event = list(set(extracted.event_type)) if extracted.event_type else []
 
