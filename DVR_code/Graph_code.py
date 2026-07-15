@@ -116,11 +116,10 @@ def extract_filters(state: AgentState):
             )
         ])
 
-
         if llm_response.driver_name:
             # Matching extracted driver_names from user_query to the fleet's list of drivers
             matching_drivers_list = resolve_driver_matches(
-                state.fleet_id, llm_response.driver_name)
+                state.fleet_id, llm_response.driver_name, known_drivers=state.drivers)
         else:
             # no driver mentioned in this turn - keep whatever was already
             # carried over from a previous node (e.g. Extract_DVR_Intent)
